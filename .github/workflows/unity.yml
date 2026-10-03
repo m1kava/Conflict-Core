@@ -1,0 +1,104 @@
+# Unity client: EditMode tests and a development Android APK.
+# Requires repository secrets UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD (see docs/DEPLOYMENT.md).
+# Without them the job reports a notice and skips instead of failing, so forks and new clones stay green.
+name: Unity Client
+
+on:
+  push:
+    branches: [main, develop, "release/**"]
+    paths: ["Client/**", "Shared/**", "Data/**", ".github/workflows/unity.yml"]
+  pull_request:
+    paths: ["Client/**", "Shared/**", "Data/**", ".github/workflows/unity.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  licence:
+    name: Check Unity licence
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.check.outputs.available }}
+    steps:
+      - id: check
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          if [ -n "$UNITY_LICENSE" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Unity CI skipped::UNITY_LICENSE secret not configured; Unity tests and Android build were not run."
+          fi
+
+  test:
+    name: EditMode tests
+    needs: licence
+    if: needs.licence.outputs.available == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/cache@v4
+        with:
+          path: Client/Library
+          key: Library-test-${{ hashFiles('Client/Packages/packages-lock.json', 'Client/Packages/manifest.json') }}
+          restore-keys: Library-test-
+      - uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: Client
+          testMode: editmode
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          checkName: Unity EditMode results
+
+  android-dev:
+    name: Android development APK
+    needs: [licence, test]
+    if: needs.licence.outputs.available == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Read version
+        id: version
+        run: echo "value=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: Client/Library
+          key: Library-Android-${{ hashFiles('Client/Packages/packages-lock.json', 'Client/Packages/manifest.json') }}
+          restore-keys: Library-Android-
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android/sdk/ndk || true
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: Client
+          targetPlatform: Android
+          buildMethod: ConflictCore.Client.Editor.BuildScript.BuildAndroid
+          androidExportType: androidPackage
+          versioning: Custom
+          version: ${{ steps.version.outputs.value }}
+          androidVersionCode: ${{ github.run_number }}
+          customParameters: -developmentBuild
+          buildName: ConflictCore-dev
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-dev-apk
+          path: build/Android
+          retention-days: 14

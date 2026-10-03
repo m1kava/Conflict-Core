@@ -1,0 +1,5 @@
+# Default reviewers. Protocol, simulation and CI changes need owner review.
+*                       @m1kava
+/Shared/                @m1kava
+/Server/                @m1kava
+/.github/               @m1kava
