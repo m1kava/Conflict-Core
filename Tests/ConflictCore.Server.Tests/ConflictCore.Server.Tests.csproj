@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\Server\ConflictCore.Server\ConflictCore.Server.csproj" />
+  </ItemGroup>
+</Project>
