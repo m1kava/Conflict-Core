@@ -226,11 +226,11 @@ export class Effects {
         vy: 1.5 + Math.random() * 2,
         vz: (Math.random() - 0.5) * 2,
         life: 2.5 + Math.random() * 2,
-        size: 3 * scale,
-        endSize: 9 * scale,
+        size: 2.5 * scale,
+        endSize: 7 * scale,
         color: SMOKE_DARK,
         endColor: SMOKE_GREY,
-        alpha: 0.7,
+        alpha: 0.5,
         drag: 0.8,
       });
     }

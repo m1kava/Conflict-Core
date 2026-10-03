@@ -42,7 +42,8 @@ export class UnitRenderer {
   ) {
     const panels = panelTexture(256, 21);
     const bodyMaterial = fow.apply(new THREE.MeshStandardMaterial({ vertexColors: true, map: panels, roughness: 0.62, metalness: 0.32 }));
-    const teamMaterial = fow.apply(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.45, metalness: 0.2, emissive: 0x111111 }));
+    // Team markings are partly self-lit so ownership stays readable in shadow and at distance.
+    const teamMaterial = fow.apply(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.1, emissive: 0x555555 }));
     for (const [key, model] of buildUnitModels()) {
       this.pools.set(key, {
         model,

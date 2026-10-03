@@ -18,7 +18,7 @@ async function connect(name: string, token?: string): Promise<TestClient> {
 }
 
 beforeAll(async () => {
-  game = createGameServer({ port: 0, host: '127.0.0.1', clientDir: '/nonexistent', maxConnections: 50, maxMatches: 20, version: 'test' });
+  game = createGameServer({ port: 0, host: '127.0.0.1', clientDir: '/nonexistent', maxConnections: 50, maxMatches: 20, version: 'test', devTools: false });
   port = await game.listen();
 });
 
@@ -156,5 +156,14 @@ describe('rate limiter', () => {
     expect([limiter.tryTake(0), limiter.tryTake(0), limiter.tryTake(0), limiter.tryTake(0)]).toEqual([true, true, true, false]);
     expect(limiter.tryTake(499)).toBe(false);
     expect(limiter.tryTake(500)).toBe(true);
+  });
+});
+
+describe('development tools', () => {
+  it('refuses scripted battles unless DEV_TOOLS is enabled', async () => {
+    const client = await connect('Tinkerer');
+    client.send({ t: 'devBattle', units: 50 });
+    const error = await client.waitFor('error');
+    expect(error.message).toContain('disabled');
   });
 });

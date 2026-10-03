@@ -42,7 +42,13 @@ class App {
     });
     this.ensureConnected(this.settings.name);
     this.showMenu();
-    const room = new URLSearchParams(location.search).get('room');
+    const params = new URLSearchParams(location.search);
+    const battle = Number(params.get('battle'));
+    if (battle > 0) {
+      // Development servers only: the server refuses this unless started with DEV_TOOLS=1.
+      this.withConnection(this.settings.name, () => this.connection.send({ t: 'devBattle', units: battle }));
+    }
+    const room = params.get('room');
     if (room) {
       this.withConnection(this.settings.name, () => this.connection.send({ t: 'joinRoom', code: room.toUpperCase() }));
     }

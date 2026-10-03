@@ -7,6 +7,8 @@ export interface ServerConfig {
   maxConnections: number;
   maxMatches: number;
   version: string;
+  /** Enables development-only commands (scripted battles). Never set in production. */
+  devTools: boolean;
 }
 
 function integer(name: string, fallback: number): number {
@@ -27,5 +29,6 @@ export function loadConfig(): ServerConfig {
     maxConnections: integer('MAX_CONNECTIONS', 500),
     maxMatches: integer('MAX_MATCHES', 100),
     version: process.env['APP_VERSION'] ?? '0.2.0',
+    devTools: process.env['DEV_TOOLS'] === '1',
   };
 }

@@ -2,7 +2,7 @@
   "name": "conflict-core",
   "version": "0.2.0",
   "private": true,
-  "description": "Conflict Core — online multiplayer real-time strategy game for the browser (desktop and mobile).",
+  "description": "Conflict Core \u2014 online multiplayer real-time strategy game for the browser (desktop and mobile).",
   "license": "UNLICENSED",
   "type": "module",
   "workspaces": [
@@ -23,7 +23,8 @@
     "format": "prettier --write \"packages/**/*.{ts,json,css,html}\"",
     "format:check": "prettier --check \"packages/**/*.{ts,json,css,html}\"",
     "validate-data": "tsx packages/shared/scripts/validate-data.ts",
-    "simulate": "tsx packages/server/scripts/bot-match.ts"
+    "simulate": "tsx packages/server/scripts/bot-match.ts",
+    "benchmark": "tsx packages/server/scripts/benchmark.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

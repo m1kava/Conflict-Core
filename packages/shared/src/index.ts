@@ -20,3 +20,4 @@ export * from './protocol/messages';
 export * from './protocol/snapshot';
 export * from './protocol/visibility';
 export * from './sim/placement';
+export * from './sim/scenarios';

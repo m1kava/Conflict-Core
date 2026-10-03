@@ -1,4 +1,4 @@
-import { decodeSnapshot, PROTOCOL_VERSION, type DecodedSnapshot, type ServerMessage } from '@conflict/shared';
+import { PROTOCOL_VERSION, SnapshotDecoder, type DecodedSnapshot, type ServerMessage } from '@conflict/shared';
 import WebSocket from 'ws';
 
 /** Minimal scripted client for integration tests: records every JSON message and decoded snapshot. */
@@ -7,6 +7,7 @@ export class TestClient {
   readonly snapshots: DecodedSnapshot[] = [];
   readonly entities = new Map<number, DecodedSnapshot['upserts'][number]>();
   socket!: WebSocket;
+  private readonly decoder = new SnapshotDecoder();
   token = '';
   private seq = 0;
 
@@ -20,7 +21,7 @@ export class TestClient {
     this.socket = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     this.socket.on('message', (data, isBinary) => {
       if (isBinary) {
-        const snapshot = decodeSnapshot(new Uint8Array(data as Buffer));
+        const snapshot = this.decoder.decode(new Uint8Array(data as Buffer));
         this.snapshots.push(snapshot);
         for (const id of snapshot.removes) {
           this.entities.delete(id);
@@ -33,6 +34,10 @@ export class TestClient {
       const message = JSON.parse(data.toString()) as ServerMessage;
       if (message.t === 'welcome') {
         this.token = message.token;
+      }
+      if (message.t === 'matchStart') {
+        this.decoder.reset();
+        this.entities.clear();
       }
       this.messages.push(message);
     });

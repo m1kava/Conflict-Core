@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION, decodeSnapshot, type ClientMessage, type Command, type DecodedSnapshot, type ServerMessage } from '@conflict/shared';
+import { PROTOCOL_VERSION, SnapshotDecoder, type ClientMessage, type Command, type DecodedSnapshot, type ServerMessage } from '@conflict/shared';
 
 export type ConnectionState = 'connecting' | 'online' | 'reconnecting' | 'offline';
 
@@ -38,6 +38,7 @@ export class Connection {
   private pingTimer = 0;
   private stopped = false;
   private name = 'Commander';
+  private readonly decoder = new SnapshotDecoder();
 
   constructor(private readonly handlers: ConnectionHandlers) {}
 
@@ -106,7 +107,7 @@ export class Connection {
       } else {
         this.bytesIn += event.data.byteLength;
         try {
-          this.handlers.onSnapshot(decodeSnapshot(event.data));
+          this.handlers.onSnapshot(this.decoder.decode(event.data));
         } catch (error) {
           console.error('Bad snapshot', error);
         }
@@ -143,6 +144,10 @@ export class Connection {
         break;
       case 'pong':
         this.rttMs = performance.now() - message.time;
+        break;
+      case 'matchStart':
+        // The server starts a fresh delta stream for every (re)joined match.
+        this.decoder.reset();
         break;
       case 'error':
         if (message.code === 'versionMismatch') {

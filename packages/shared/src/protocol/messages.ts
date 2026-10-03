@@ -21,7 +21,9 @@ export type ClientMessage =
   | { t: 'startRoom' }
   | { t: 'command'; seq: number; command: unknown }
   | { t: 'leaveMatch' }
-  | { t: 'ping'; time: number };
+  | { t: 'ping'; time: number }
+  /** Development servers only (DEV_TOOLS=1): large scripted battle for visual and performance checks. */
+  | { t: 'devBattle'; units: number };
 
 export interface RoomSlotView {
   slot: number;
@@ -153,6 +155,10 @@ export function parseClientMessage(text: string): ClientMessage | null {
     }
     case 'ping':
       return typeof m['time'] === 'number' && Number.isFinite(m['time']) ? { t: 'ping', time: m['time'] } : null;
+    case 'devBattle': {
+      const units = m['units'];
+      return typeof units === 'number' && Number.isInteger(units) && units >= 2 && units <= 600 ? { t: 'devBattle', units } : null;
+    }
     default:
       return null;
   }

@@ -24,7 +24,7 @@ export interface GameServer {
 
 /** HTTP (static client + health) and WebSocket game endpoint on one port. */
 export function createGameServer(config: ServerConfig): GameServer {
-  const lobby = new Lobby({ version: config.version, maxMatches: config.maxMatches });
+  const lobby = new Lobby({ version: config.version, maxMatches: config.maxMatches, devTools: config.devTools });
 
   const server = createServer((request, response) => {
     if (request.url === '/healthz') {

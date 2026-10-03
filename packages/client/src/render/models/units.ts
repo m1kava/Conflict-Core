@@ -103,6 +103,8 @@ function mainBattleTank(): UnitModel {
   const turretTeam = new ModelBuilder();
   turretTeam.box(1.6, 0.16, 0.04, { color: PALETTE.white, position: [-0.6, 0.6, -1.53] });
   turretTeam.box(1.6, 0.16, 0.04, { color: PALETTE.white, position: [-0.6, 0.6, 1.53] });
+  turretTeam.box(1.7, 0.04, 1.2, { color: PALETTE.white, position: [-1.2, 0.93, 0.25] });
+  hullTeam.box(1.2, 0.04, 3.0, { color: PALETTE.white, position: [-1.6, 1.69, 0] });
 
   return { hull: hull.build(), hullTeam: hullTeam.build(), turret: turret.build(), turretTeam: turretTeam.build(), turretPivot: new THREE.Vector3(0.25, 1.66, 0), scale: 1, selectionRadius: 4.2 };
 }
@@ -131,7 +133,10 @@ function reconVehicle(): UnitModel {
   barrel(turret, 0.6, 2.2, 0.48, 0.05);
   turret.cylinder(0.08, 0.08, 0.25, { color: PALETTE.gunmetal, position: [2.75, 0.48, 0], rotation: [0, 0, -HALF_PI] }, 8);
   turret.box(0.5, 0.35, 0.25, { color: PALETTE.slateDark, position: [-0.1, 0.5, -0.5] }, 0.03);
-  return { hull: hull.build(), hullTeam: hullTeam.build(), turret: turret.build(), turretTeam: new THREE.BufferGeometry(), turretPivot: new THREE.Vector3(-0.45, 2.02, 0), scale: 1, selectionRadius: 3.2 };
+  const turretTeam = new ModelBuilder();
+  turretTeam.box(1.0, 0.04, 0.6, { color: PALETTE.white, position: [0.05, 0.77, 0] });
+  hullTeam.box(1.6, 0.04, 2.0, { color: PALETTE.white, position: [-1.7, 2.04, 0] });
+  return { hull: hull.build(), hullTeam: hullTeam.build(), turret: turret.build(), turretTeam: turretTeam.build(), turretPivot: new THREE.Vector3(-0.45, 2.02, 0), scale: 1, selectionRadius: 3.2 };
 }
 
 function antiAirVehicle(): UnitModel {
@@ -161,6 +166,7 @@ function antiAirVehicle(): UnitModel {
   const turretTeam = new ModelBuilder();
   turretTeam.box(1.2, 0.14, 0.04, { color: PALETTE.white, position: [0, 0.55, -0.82] });
   turretTeam.box(1.2, 0.14, 0.04, { color: PALETTE.white, position: [0, 0.55, 0.82] });
+  turretTeam.box(1.6, 0.04, 1.3, { color: PALETTE.white, position: [0.1, 1.11, 0] });
   return { hull: hull.build(), hullTeam: hullTeam.build(), turret: turret.build(), turretTeam: turretTeam.build(), turretPivot: new THREE.Vector3(-0.2, 1.55, 0), scale: 1, selectionRadius: 3.8 };
 }
 
@@ -183,6 +189,7 @@ function selfPropelledGun(): UnitModel {
   const turretTeam = new ModelBuilder();
   turretTeam.box(1.8, 0.18, 0.04, { color: PALETTE.white, position: [-0.3, 1.0, -1.53] });
   turretTeam.box(1.8, 0.18, 0.04, { color: PALETTE.white, position: [-0.3, 1.0, 1.53] });
+  turretTeam.box(2.0, 0.04, 1.6, { color: PALETTE.white, position: [-0.6, 1.63, -0.4] });
   return { hull: hull.build(), hullTeam: hullTeam.build(), turret: turret.build(), turretTeam: turretTeam.build(), turretPivot: new THREE.Vector3(-0.9, 1.48, 0), scale: 1, selectionRadius: 4.2 };
 }
 
@@ -205,6 +212,7 @@ function supplyTruck(): UnitModel {
   const hullTeam = new ModelBuilder();
   hullTeam.box(1.6, 0.25, 0.04, { color: PALETTE.white, position: [-0.05, 2.1, -1.08] });
   hullTeam.box(1.6, 0.25, 0.04, { color: PALETTE.white, position: [-0.05, 2.1, 1.08] });
+  hullTeam.box(1.4, 0.04, 2.0, { color: PALETTE.white, position: [2.25, 2.62, 0], rotation: [0, 0, -0.03] });
   return { hull: hull.build(), hullTeam: hullTeam.build(), turretPivot: new THREE.Vector3(), scale: 1, selectionRadius: 3.6 };
 }
 
@@ -234,8 +242,8 @@ function soldier(kit: SoldierKit): { body: THREE.BufferGeometry; team: THREE.Buf
     b.box(0.08, 0.08, 0.5, { color: PALETTE.metal, position: [0.35, 1.2, 0.0], rotation: [0.3, 0, 0] });
   }
   const team = new ModelBuilder();
-  team.box(0.06, 0.12, 0.08, { color: PALETTE.white, position: [0, 1.32, -0.255] });
-  team.box(0.06, 0.12, 0.08, { color: PALETTE.white, position: [0, 1.32, 0.255] });
+  team.box(0.4, 0.1, 0.54, { color: PALETTE.white, position: [0.01, 1.3, 0] });
+  team.add(new THREE.SphereGeometry(0.165, 10, 4, 0, Math.PI * 2, 0, Math.PI / 5), { color: PALETTE.white, position: [0, 1.645, 0] });
   return { body: b.build(), team: team.build() };
 }
 

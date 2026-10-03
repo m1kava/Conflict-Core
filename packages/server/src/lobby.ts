@@ -2,6 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import {
   PROTOCOL_VERSION,
   getMap,
+  setupBattleScenario,
   type BotDifficulty,
   type ClientMessage,
   type RoomSlotView,
@@ -30,6 +31,7 @@ interface Room {
 export interface LobbyOptions {
   version: string;
   maxMatches: number;
+  devTools?: boolean;
 }
 
 /**
@@ -114,6 +116,19 @@ export class Lobby {
         return;
       case 'ping':
         session.send({ t: 'pong', time: message.time, serverTick: session.match?.world.tick ?? 0 });
+        return;
+      case 'devBattle':
+        if (!this.options.devTools) {
+          session.send({ t: 'error', code: 'badMessage', message: 'Development tools are disabled on this server.' });
+          return;
+        }
+        this.createMatch(
+          [
+            { slot: 0, team: 0, name: session.name, session },
+            { slot: 1, team: 1, name: 'Normal AI', bot: 'normal' },
+          ],
+          message.units,
+        );
         return;
     }
   }
@@ -377,13 +392,16 @@ export class Lobby {
     return this.matches.size < this.options.maxMatches;
   }
 
-  private createMatch(seats: MatchSeat[]): Match {
+  private createMatch(seats: MatchSeat[], battleUnits = 0): Match {
     for (const seat of seats) {
       if (seat.session?.match) {
         seat.session.match.leave(seat.session);
       }
     }
     const match = new Match(randomUUID(), seats, (m) => this.matches.delete(m));
+    if (battleUnits > 0) {
+      setupBattleScenario(match.world, Math.round(battleUnits / 2));
+    }
     this.matches.add(match);
     match.start();
     return match;
