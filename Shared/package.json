@@ -1,0 +1,10 @@
+{
+  "name": "com.conflictcore.shared",
+  "displayName": "Conflict Core Shared",
+  "version": "0.1.0",
+  "unity": "6000.0",
+  "description": "Engine-independent code shared by the Unity client, the match server and tools: deterministic math, protocol, game data definitions.",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  }
+}

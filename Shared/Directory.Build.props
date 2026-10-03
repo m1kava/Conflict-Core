@@ -1,0 +1,11 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <!--
+    Code under /Shared is compiled by Unity as well (C# 9, .NET Standard 2.1).
+    Pinning the same profile here makes the dotnet build reject C# 10+ syntax before Unity ever sees it.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+</Project>
