@@ -1,0 +1,16 @@
+{
+  "name": "ConflictCore.Client.Logic",
+  "rootNamespace": "ConflictCore.Client.Logic",
+  "references": [
+    "ConflictCore.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

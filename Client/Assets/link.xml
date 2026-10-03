@@ -1,0 +1,8 @@
+<!--
+  IL2CPP managed code stripping keeps only statically referenced code. Game data definitions are created by
+  Newtonsoft.Json through reflection, so their assemblies must be preserved explicitly.
+-->
+<linker>
+  <assembly fullname="ConflictCore.GameData" preserve="all" />
+  <assembly fullname="ConflictCore.Core" preserve="all" />
+</linker>

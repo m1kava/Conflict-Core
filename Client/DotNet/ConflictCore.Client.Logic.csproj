@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Compiles the engine-free client logic (Assets/_Project/Scripts/Logic) outside Unity so it can be built,
+    analysed and unit-tested in CI without a Unity licence. Unity compiles the same files via its .asmdef.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <RootNamespace>ConflictCore.Client.Logic</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Assets\_Project\Scripts\Logic\**\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\ConflictCore.Core\ConflictCore.Core.csproj" />
+  </ItemGroup>
+</Project>

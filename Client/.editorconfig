@@ -1,0 +1,3 @@
+# Compiled by Unity (C# 9): file-scoped namespaces are not available.
+[*.cs]
+csharp_style_namespace_declarations = block_scoped:warning
