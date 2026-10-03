@@ -1,0 +1,14 @@
+# One-click free hosting on Render (https://render.com): New → Blueprint → select this repository.
+# The free plan sleeps when idle (first visit after a pause takes ~1 minute to wake) — fine for playing with
+# friends; upgrade the plan for an always-on server.
+services:
+  - type: web
+    name: conflict-core
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production

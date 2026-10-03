@@ -1,3 +1,4 @@
+# LEGACY (Unity prototype): disabled unless the repository variable ENABLE_LEGACY_UNITY is 'true'.
 # Signed Android App Bundle for store submission. Runs only for version tags or manual dispatch and
 # targets the protected "production" environment, which requires reviewer approval and holds the signing
 # secrets. Store upload is PLANNED (Phase 10); today the signed AAB is published as an artifact.
@@ -14,6 +15,7 @@ permissions:
 jobs:
   build-aab:
     name: Signed AAB
+    if: vars.ENABLE_LEGACY_UNITY == 'true'
     runs-on: ubuntu-latest
     environment: production
     timeout-minutes: 120

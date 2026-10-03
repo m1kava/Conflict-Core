@@ -1,214 +1,120 @@
 # Architecture
 
-This document is the technical architecture proposal for Conflict Core and the reference for how the codebase is
-organised. Decisions with significant trade-offs have their own records in [adr/](adr).
-
 Priorities, in order: **architecture → correct multiplayer simulation → core RTS gameplay → mobile usability →
 performance → network robustness → visual quality → content quantity.**
 
----
+The project started as a Unity/C# design (see ADRs 0001–0004). It was re-platformed to a free, browser-first
+TypeScript stack so the game can be played and hosted without licences or paid services (ADR 0005). The
+networking model and design priorities carried over unchanged.
 
-## 1. Architecture in one page
-
-* **The server owns reality.** A dedicated match server runs the only authoritative simulation. Clients send
-  *intents* (commands); the server validates them against authoritative state, simulates, and sends each client
-  a *fog-filtered* view of the world. No client ever decides damage, economy, construction or victory.
-* **Deterministic fixed-point simulation.** Gameplay math uses `Fixed` (Q47.16 integers), a PCG32 RNG and
-  ordered iteration only. The server is therefore reproducible: a match = initial setup + command log, which
-  gives replays, desync-proof re-simulation for disputes/anti-cheat, and golden-value regression tests.
-* **Data-driven content.** Units, weapons, armor, veterancy and factions are JSON definitions validated in CI. No
-  unit is hard-coded. Client and server compare a content hash at handshake.
-* **One language across the stack.** C# everywhere: Unity client, .NET 8 match server, ASP.NET Core backend.
-  Simulation, protocol and data code is *the same source* compiled by both Unity and .NET.
-* **Engine-free logic, thin engine adapters.** Input recognition, camera math, layout and quality selection live
-  in plain C# (`Client/Assets/_Project/Scripts/Logic`, `noEngineReferences: true`) and are unit-tested in CI
-  without Unity. MonoBehaviours only translate between Unity and that logic.
-* **Centralised, tick-based systems.** No per-unit `Update()`. Simulation runs in fixed ticks (15 Hz) inside
-  system managers iterating packed arrays; presentation interpolates at the display rate (30/60 FPS).
-* **Disposable match servers.** One process per match, stateless outside that match; persistent data lives in the
-  backend/database. Servers are containers scheduled by a fleet manager (Agones) per region.
-
-## 2. Engine choice: Unity 6 LTS + URP
-
-Full record: [adr/0001-engine-unity.md](adr/0001-engine-unity.md).
-
-| Criterion | Unity 6 (URP) | Unreal Engine 5 | Godot 4 |
-|---|---|---|---|
-| Android/iOS maturity | Excellent, largest share of shipped 3D mobile games | Good, but heavy runtime, large binaries, higher baseline GPU cost | Improving; C# mobile export younger, smaller device coverage |
-| Mobile realistic rendering | URP: PBR, cascaded shadows, SRP Batcher, GPU instancing, GPU Resident Drawer, LOD groups, ASTC | Superb high-end, but Lumen/Nanite unavailable on most phones; mobile path needs heavy tuning | Vulkan mobile renderer workable; fewer mobile-scale optimisations |
-| Hundreds of RTS entities | Burst + Jobs + Collections, indirect instancing; custom ECS-style managers | Mass Entity, but C++ cost of iteration | GDExtension/C# possible; less tooling |
-| Shared code with headless server | C# source shared directly with a plain .NET 8 server | C++ sim shared with dedicated server builds (heavy) | C# possible, ecosystem smaller |
-| Profiling | Profiler, Frame Debugger, Memory Profiler, Profile Analyzer, Android GPU Inspector/Xcode integration | Unreal Insights (excellent) | Basic built-in profiler |
-| Assets & licensing ecosystem | Asset Store + Fab/Sketchfab/Poly Haven import | Fab, Quixel | Smaller |
-| CI/CD | game-ci (Docker), batch mode builds; needs licence secret | Large build machines, long builds | Easy (open source) |
-
-**Decision:** Unity 6 LTS with URP. **Trade-offs accepted:** closed-source engine and licence terms (Unity Pro
-required above the revenue threshold), CI needs a licence secret, URP mobile needs disciplined budgets to look
-premium. Mitigations: engine-free gameplay core (the simulation does not depend on Unity at all), strict
-performance budgets, and an asset pipeline built around LODs and texture budgets.
-
-## 3. Multiplayer model: authoritative server + fog-filtered delta snapshots
-
-Full record: [adr/0002-network-model.md](adr/0002-network-model.md); protocol details: [NETWORKING.md](NETWORKING.md).
-
-Classic PC RTS games use *deterministic lockstep*: every client runs the full simulation and only commands are
-exchanged. It was rejected as the primary model because on mobile it means:
-
-* **every client has full world state → map hacks are trivial**, which violates "fog must not leak";
-* every phone must run the entire simulation at full rate (CPU/battery), and the slowest device stalls everyone;
-* a 2-second network stall freezes the game for all players; reconnect requires fast-forwarding the whole match;
-* spectators and join-in-progress need the same full simulation.
-
-Chosen model: **server simulation at 15 Hz; clients send compact commands; the server sends per-player,
-visibility-filtered, delta-compressed snapshots; clients interpolate ~2 snapshots behind and render at 30/60 FPS.**
-Projectiles and effects are sent as *events* (one message per shot, simulated visually on the client), not as
-per-tick transforms. Command acknowledgement feedback (voice line, move marker, turret slewing toward the target)
-is immediate and local, which hides command latency the same way PC RTS games always have.
-
-The simulation is nevertheless kept deterministic (fixed-point) because it buys replays, reproducible bug reports,
-server-side desync detection, and keeps the door open for client-side prediction of the local player's units.
-
-## 4. Client / server diagram
+## 1. Overview
 
 ```mermaid
 flowchart LR
-  subgraph Device["Phone / tablet (untrusted)"]
-    UI["UI & HUD\n(uGUI, safe areas)"]
-    Input["Gesture recognizer\n(Logic, engine-free)"]
-    Cmd["Command builder\n(intent only)"]
-    Net["Client transport\nUDP + reliability"]
-    Interp["Snapshot buffer &\ninterpolation"]
-    View["Presentation\nLOD, VFX/audio pools,\nfog rendering"]
-    Input --> Cmd --> Net
-    Net --> Interp --> View
-    UI --> Cmd
+  subgraph Browser["Browser (desktop / tablet / phone) — untrusted"]
+    Input["Input\nmouse · keyboard · touch gestures"]
+    Ctrl["GameController\nselection · context commands · HUD"]
+    CW["ClientWorld\nsnapshot interpolation · fog memory · ghosts"]
+    R["Renderer (Three.js)\nterrain · instanced units · effects · fog shader"]
+    Net["Connection\nWebSocket · reconnect · command resend"]
+    Input --> Ctrl --> Net
+    Net --> CW --> R
   end
 
-  subgraph Region["Region cluster (e.g. EU)"]
-    subgraph MS["Match server process (one per match)"]
-      Gate["Handshake\nversion + ticket check"]
-      Val["Command validator\nownership, cost, tech,\ncooldown, rate limits"]
-      Sim["Authoritative simulation\n15 Hz fixed-point"]
-      Vis["Visibility / fog\nper team"]
-      Snap["Snapshot builder\ndelta + interest mgmt"]
-      Rec["Replay recorder\ncommand log"]
-      Gate --> Val --> Sim --> Vis --> Snap
-      Val --> Rec
+  subgraph Server["Node.js game server (one process, many matches)"]
+    HTTP["HTTP\nstatic client · /healthz · security headers"]
+    Lobby["Lobby\nsessions · quick match · rooms · AI games"]
+    subgraph Match["Match (one per game)"]
+      Val["parseCommand + semantic checks\nownership · cost · tech · visibility · rate limit"]
+      Sim["World (authoritative)\n15 Hz fixed tick"]
+      Bot["Bots\nsame commands as players"]
+      Enc["SnapshotEncoder per player\nfog-filtered field deltas"]
     end
-    Alloc["Fleet allocator\n(Agones)"]
   end
 
-  subgraph Backend["Backend (stateless API, horizontally scaled)"]
-    Auth["Auth\nguest, Google, Apple"]
-    Prof["Profiles, stats,\nmatch history"]
-    MM["Matchmaking &\nlobbies"]
-    Res["Match results\n(server-reported only)"]
-    Cfg["Remote config\nregions, min version"]
-  end
-
-  DB[("PostgreSQL")]
-  Cache[("Redis\nqueues, sessions")]
-
-  Net -- "commands (reliable)" --> Gate
-  Snap -- "snapshots (unreliable, sequenced)\nevents (reliable)" --> Net
-  Device -- "HTTPS + JWT" --> Backend
-  MM --> Alloc --> MS
-  MM -- "signed join ticket" --> Device
-  MS -- "result (service credentials)" --> Res
-  Backend --> DB
-  Backend --> Cache
+  Net -- "JSON: hello, lobby, commands (seq)" --> Lobby
+  Lobby --> Val --> Sim
+  Bot --> Val
+  Sim --> Enc -- "binary snapshots + JSON events/private state" --> Net
 ```
 
-## 5. Repository structure and module boundaries
+* **The server owns reality.** Clients send intents (`move`, `attack`, `build`, `produce`, …). The server checks
+  shape (`parseCommand`) and meaning (ownership, prerequisites, credits, placement, visibility of targets) against
+  its own state. There is no message a client can use to assert an outcome.
+* **Fog of war is enforced by omission.** Each player's snapshot contains only entities their team can see;
+  combat events are filtered by visibility; private data (credits, queues) only goes to its owner.
+* **One shared codebase.** `@conflict/shared` holds game data, map/terrain, the simulation, the AI and the
+  protocol. The server runs it authoritatively; the client uses the same terrain, data and placement rules for
+  rendering and instant UI feedback; tests and tools reuse it.
+* **Data-driven content.** Units, structures, weapons, armor matrix, veterancy and factions are JSON validated
+  at load and in CI. No unit is hard-coded in simulation logic.
+* **Centralised, tick-based systems.** No per-entity update callbacks: systems iterate entities in a fixed order
+  every tick; the client renders through instanced pools and pooled effects.
+
+## 2. Packages and boundaries
 
 ```
-Shared/                       compiled by Unity AND .NET (C# 9, netstandard2.1, no UnityEngine)
-  ConflictCore.Core           Fixed, FixedMath, FixedVector2, DeterministicRandom, EntityId, PlayerSlot, SimTick, StateHasher
-  ConflictCore.Protocol       PacketWriter/Reader, ClientHello/HelloReply, CommandBatch/CommandCodec, versioning
-  ConflictCore.GameData       definitions, JSON loader (decimal → Fixed), validator, GameDatabase, content hash
-  (Phase 2) ConflictCore.Simulation   world state, systems, commands, combat, economy — server-run, client-testable
-Server/ConflictCore.Server    host (fixed tick loop), sessions/handshake, (Phase 4) transport, snapshots, validation
-Client/Assets/_Project/
-  Scripts/Logic               engine-free client logic (gestures, camera model, layout, quality tiers)
-  Scripts/Runtime             Unity adapters (input, camera rig, safe area, quality, placeholder terrain, bootstrap)
-  Scripts/Editor              project setup and CI build entry points
-  Tests/EditMode              Unity-side tests (shared code determinism under Mono/IL2CPP)
-Data/                         JSON content and balance
-Tools/                        data validator; later: map compiler, benchmark runner, replay inspector
-Backend/                      (Phase 9) ASP.NET Core services + SQL migrations
-Tests/                        xUnit projects mirroring the modules above
+packages/shared/src
+  constants.ts            tick rate, grid sizes, protocol version
+  data/                   types, validation, GameData registry (content hash, network indices)
+  map/                    MapDef, original maps, analytic Terrain (heights, water, cliffs, passability)
+  sim/                    World + systems: orders, movement, navigation (A*), formation, targeting, combat,
+                          economy, visibility, victory, placement rules, commands, events, scenarios
+  ai/bot.ts               AI opponent (issues normal commands only)
+  protocol/               JSON message types + strict parsers, binary snapshot delta codec, event filtering
+packages/server/src
+  server.ts               HTTP + WebSocket wiring, per-connection rate limit, heartbeat
+  lobby.ts                sessions (token-based identity), quick match, rooms, AI matches, dev battles
+  match.ts                one authoritative match: fixed-rate loop, command intake, snapshots, reconnects
+  staticFiles.ts          safe static serving of the built client
+packages/client/src
+  net/connection.ts       WebSocket, reconnect with backoff, session token, command sequence + resend
+  game/                   ClientWorld (interpolation, fog, ghosts), GameController, placement preview, settings
+  input/                  RTS camera, gesture recognizer, input controller (mouse/keys/touch)
+  render/                 scene, terrain, environment, models, instanced unit pools, buildings, effects, fog
+  ui/                     HUD, minimap, menus/screens, icons, styles
+  audio/                  procedural WebAudio sound engine
 ```
 
-Dependency rules (enforced by project references / asmdefs):
+Rules: shared never imports server or client code; the server never imports DOM/Three.js; UI never contains game
+rules (it calls the controller, which only sends commands).
 
-```
-Core  <-  Protocol
-Core  <-  GameData
-Core, GameData  <-  Simulation (Phase 2)
-Shared/*  <-  Server, Client.Logic, Client.Runtime, Tools
-Client.Logic  <-  Client.Runtime  <-  Client.Editor
-```
+## 3. Simulation
 
-* Shared and Client.Logic never reference UnityEngine; the server never references Unity.
-* UI never contains game rules; it reads view models and emits commands.
-* No global mutable singletons: dependencies are passed explicitly (server uses `Microsoft.Extensions.Hosting` DI;
-  the client uses a composition root in `GameBootstrap`).
+* Fixed tick at 15 Hz. Order of systems per tick: apply queued commands → power → orders (targeting, construction,
+  harvesting, chasing) → path requests (work-budgeted A*) → movement + separation → combat (turrets, bursts,
+  shots) → projectiles → economy (production, regeneration) → visibility (every 2nd tick) → cleanup → victory.
+* Navigation: 2 m grid from analytic terrain (water, cliffs, map border) plus structure occupancy; A* with octile
+  heuristic, no corner cutting, line-of-sight smoothing; group members reuse a path computed for a neighbour in
+  the same tick; per-tick budget counts node expansions (deterministic).
+* Combat: weapons from data — hitscan, straight projectiles, guided missiles, ballistic artillery (minimum range,
+  scatter, friendly fire); armor × damage multipliers; linear splash falloff; veterancy multipliers.
+* Determinism: seeded integer PRNG, insertion-ordered iteration, no wall clock. The same server build reproduces a
+  match from its seed and command stream (`World.stateHash()` is checked in tests). See ADR 0005 for why the
+  TypeScript version uses floating point instead of fixed point.
 
-## 6. Simulation architecture (Phase 2 design)
+## 4. Client
 
-* **World** owns component arrays (structure-of-arrays) indexed by dense entity slots; `EntityId`s are
-  monotonically allocated and never reused, so stale references are detectable.
-* **Systems** run in a fixed, documented order each tick:
-  `CommandApply → Orders/AI → Pathing requests → Movement → Targeting → Weapons → Projectiles →
-  Damage/Death → Economy/Production/Construction → Visibility (every 3rd tick) → Victory → Snapshot`.
-* **Spatial hash grid** (cell ≈ 16 m) for neighbour queries, targeting and splash; rebuilt incrementally.
-* **Pathfinding:** grid-based navigation per locomotor class (foot, wheeled, tracked, hover) on the map's
-  passability data; hierarchical A* (clusters) for long routes + **flow fields shared by groups** with the same
-  destination; formation slots computed once per group command; local avoidance via cheap separation steering;
-  path requests are budgeted per tick (time-sliced) and cached.
-* **Air units** use separate movement models (helicopter hover/strafe, jet attack runs with turn radius, return to
-  airfield to rearm) on an air layer that ignores ground pathing.
-* **Weapons** are evaluated per firing unit at tick rate with cooldown counters in ticks; hitscan resolves
-  immediately; projectiles/missiles are pooled structs advanced analytically (no physics engine);
-  ballistic artillery resolves at a computed impact tick.
-* **No floats, no `System.Random`, no unordered iteration, no wall-clock** in simulation code.
+* `ClientWorld` keeps a short sample history per entity and renders 2 ticks behind the latest snapshot, advancing at
+  real-time speed with gentle drift correction (smooth under jitter). Events play when render time reaches their
+  tick. Enemy structures that leave vision become ghosts until their location is seen again.
+* Rendering uses one `InstancedMesh` per unit model part (hull, turret, team markings) — draw calls do not grow
+  with unit count. Effects use two particle layers, a tracer line pool and an instanced decal pool.
+* Fog of war is applied in every world material through shader injection sampling a small fog texture.
 
-## 7. Client presentation architecture
+## 5. Implementation status
 
-* Snapshot buffer → interpolation (positions, headings, turret yaw) → render proxies. Units are rendered through
-  per-archetype instanced batches with LOD selection by screen size; individual GameObjects only for
-  selected/hero objects where needed.
-* Presentation systems are centralised managers (one `Update` each) that iterate dense arrays: unit visuals, VFX
-  pool, audio voice manager, decals, fog texture, selection highlighting.
-* Frame budget is enforced by quality tiers and runtime counters (see [PERFORMANCE.md](PERFORMANCE.md)).
-
-## 8. Error handling and logging
-
-* Inbound network data → `ProtocolException` → packet dropped, strike counted; repeated strikes disconnect.
-* Data errors are fatal at start-up (server refuses to run with invalid data; CI refuses to merge it).
-* Player-facing errors map to specific reasons (`JoinRejectReason`: update required, match ended, ...);
-  technical details go to structured logs (server: `ILogger`, source-generated messages; client: log + crash
-  reporting in Phase 10).
-
-## Implementation status
-
-| System | Status | Notes |
-|---|---|---|
-| Repository, build system, conventions, CI | **IMPLEMENTED** | `.editorconfig` style gate, warnings-as-errors, central package versions |
-| Deterministic math (`Fixed`, trig, sqrt, RNG, hashing) | **IMPLEMENTED** | golden-value tests guard determinism |
-| Protocol serialization, handshake messages, command encoding | **IMPLEMENTED** | fuzz-tested decoder; transport not yet connected |
-| Version policy (protocol/client/data hash) | **IMPLEMENTED** | used by `HandshakeHandler` |
-| Game data definitions, loader, validator, content hash | **IMPLEMENTED** | strict JSON; CI validation |
-| Halcyon unit/weapon data | **PARTIAL** | draft balance; no structures/abilities yet |
-| Match server host & fixed tick loop | **PARTIAL** | runs a placeholder simulation; no networking |
-| Join ticket verification | **PLANNED** | interface only (`IJoinTicketVerifier`) — Phase 4 |
-| Gesture recognition (tap, double tap, long press, pan, box select, pinch/twist) | **IMPLEMENTED** | engine-free, unit-tested; Unity adapter unverified on device |
-| RTS camera model (pan, inertia, zoom, rotate, bounds) | **IMPLEMENTED** | engine-free, unit-tested |
-| Unity adapters (input router, camera rig, safe area, quality applier) | **PARTIAL** | written against Unity 6 APIs; not yet compiled in this environment — first Unity CI run verifies |
-| Quality tiers & device classification | **PARTIAL** | values are initial; needs device profiling |
-| Terrain | **PLACEHOLDER** | runtime-generated test terrain, flat colours, visual-only |
-| Unity project setup & Android build script | **PARTIAL** | code-driven setup; requires first editor run |
-| RTS simulation (movement, pathing, combat, economy) | **PLANNED** | Phase 2–3 |
-| Networking transport, snapshots, fog filtering, reconnect | **PLANNED** | Phase 4 |
-| Backend, accounts, matchmaking, database | **PLANNED** | Phase 9 (protocol hooks exist: join tickets, resume tokens) |
-| Production art, audio, VFX, UI | **PLANNED** | Phase 7 — no production assets in the repository yet |
+| System | Status |
+|---|---|
+| Authoritative server, lobby, quick match, private rooms, AI matches | IMPLEMENTED |
+| Reconnect and resync, command dedupe, rate limits, version check | IMPLEMENTED |
+| Fog-filtered field-delta snapshots, event filtering | IMPLEMENTED |
+| Simulation: movement, pathing, formations, combat, economy, construction, production, power, veterancy, victory | IMPLEMENTED |
+| AI (easy / normal / hard) | IMPLEMENTED |
+| Browser client: rendering, controls (mouse + touch), HUD, minimap, menus, settings, results, sound | IMPLEMENTED |
+| 3D models | IMPLEMENTED as procedural geometry (no downloaded assets; see ASSET_PIPELINE.md) |
+| LOD switching for units | PLANNED (instancing keeps cost low today; see PERFORMANCE.md) |
+| Aircraft, superweapons, Bastion Union and Sable Front factions, additional maps | PLANNED |
+| Replays / spectators | PLANNED (deterministic simulation and command log make this straightforward) |
+| Accounts, rankings, match history (database) | PLANNED (BACKEND.md) |
+| Legacy C#/Unity prototype in `Client/ Shared/ Server/ Tools/ Tests/` | SUPERSEDED (kept until removal is approved) |

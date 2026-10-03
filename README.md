@@ -1,129 +1,93 @@
 # Conflict Core
 
-A server-authoritative, online multiplayer **3D real-time strategy game for Android and iOS**, built to deliver the
-depth of classic PC military RTS — base building, economy, power, combined-arms armies, tech progression,
-superweapons — redesigned for touchscreens. All factions, units, maps, art and audio are original.
+**An online multiplayer real-time strategy game that runs in the browser** — on desktop, tablet and phone,
+with nothing to install and nothing to pay for. Build a base, run supply trucks, keep the power on, field
+tanks, infantry, anti-air and artillery, and break the enemy base — against the AI or real players.
 
-> **Project status: Phase 1 — Foundation (in progress).** Nothing is playable yet. See
-> [docs/ROADMAP.md](docs/ROADMAP.md) and the status table in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#implementation-status).
-> Every system is marked **IMPLEMENTED**, **PARTIAL**, **PLACEHOLDER** or **PLANNED** — placeholders are never presented as final.
+All factions, units, maps, models, sounds and UI are original. Inspired by the *style* of classic modern-military
+PC RTS games; no copyrighted content is used.
 
-## Technology stack
+## Play
 
-| Layer | Technology | Why (details in [ARCHITECTURE.md](docs/ARCHITECTURE.md)) |
+| How | Steps |
+|---|---|
+| **Locally (one command)** | `npm install && npm run build && npm start` → open <http://localhost:8080> |
+| **With Docker** | `docker build -t conflict-core . && docker run --rm -p 8080:8080 conflict-core` |
+| **Online for free** | Deploy this repository on [Render](https://render.com) via *New → Blueprint* (uses `render.yaml`, free plan) and share the URL. Any host that runs a Docker container or Node 20+ works. |
+
+In the game: **Play vs AI** (easy / normal / hard), **Quick Match** (pairs the next two players), or
+**Create private room** and send the code or invite link to a friend.
+
+## What's in the game today
+
+| Area | Status |
+|---|---|
+| Server-authoritative multiplayer (WebSocket), quick match, private rooms with codes/links, games vs AI | **Implemented** |
+| Reconnect after network drops (90 s grace, full resync, duplicate-command protection) | **Implemented** |
+| Fog of war enforced on the server (hidden enemies are never sent) | **Implemented** |
+| Base building: Command HQ, Power Plant, Supply Depot, Barracks, Vehicle Plant, Guard Tower, Radar Uplink | **Implemented** |
+| Economy: supply fields + trucks, credits, power (low power slows production, shuts towers and radar) | **Implemented** |
+| Units: engineer, rifle squad, AT team, supply truck, recon vehicle, main battle tank, AA vehicle, artillery | **Implemented** |
+| Combat: armor × damage matrix, turrets, bursts, hitscan / shells / guided missiles / artillery, splash, veterancy | **Implemented** |
+| Pathfinding (A* + smoothing + group path sharing), formations, collision avoidance | **Implemented** |
+| Mouse/keyboard and touch controls, RTS camera, minimap, HUD, settings, results | **Implemented** |
+| AI opponent that plays through normal player commands | **Implemented** |
+| 3D graphics: procedural models, instanced rendering, terrain, river, bridge, vegetation, effects, quality presets | **Implemented** (models are procedural, see [Asset pipeline](docs/ASSET_PIPELINE.md)) |
+| Sound: procedural WebAudio effects | **Implemented** (no music yet) |
+| Bastion Union and Sable Front factions, aircraft, superweapons, more maps | **Planned** |
+| Accounts, rankings, match history | **Planned** (needs a database; the game works without it) |
+
+## Technology
+
+| Layer | Technology | Why |
 |---|---|---|
-| Client | **Unity 6 LTS**, URP, Input System, Addressables, Burst/Jobs | Best-in-class Android/iOS support, scalable PBR renderer, profilers, C# shared with the server |
-| Shared code | **C# 9 / .NET Standard 2.1** | Deterministic fixed-point math, protocol, game data — compiled by Unity *and* .NET |
-| Match server | **.NET 8** headless console app, Docker | Server-authoritative simulation; one disposable process per match |
-| Backend (Phase 9) | ASP.NET Core, PostgreSQL, Redis, Kubernetes + Agones | Accounts, matchmaking, lobbies, results, fleet allocation |
-| CI/CD | GitHub Actions, game-ci, GHCR | Build/test/lint on every PR, Android APK/AAB, server images |
+| Client | TypeScript, **Three.js** (WebGL 2), Vite | Runs in every modern browser incl. mobile; free and open source |
+| Shared code | TypeScript package `@conflict/shared` | One implementation of rules, data, map and protocol for client, server, AI and tests |
+| Game server | **Node.js 20+**, `ws` | Authoritative 15 Hz simulation, lobby, matchmaking; one small process |
+| Tests & tooling | Vitest, ESLint, Prettier, Playwright | Unit/integration tests, headless browser checks |
+| Delivery | Docker, GitHub Actions, optional Render blueprint | Free CI and free hosting option |
+
+Everything is free/open-source software. No accounts, keys or paid services are needed to build, run or host the game.
 
 ## Repository layout
 
 ```
-Client/            Unity project (Assets/_Project/Scripts/{Logic,Runtime,Editor}, Tests)
-  DotNet/          csproj that compiles the engine-free client logic for CI tests
-Shared/            Unity package "com.conflictcore.shared" + .NET projects
-  ConflictCore.Core/       fixed-point math, deterministic RNG, ids, state hashing
-  ConflictCore.Protocol/   wire format, handshake, versioning, command encoding
-  ConflictCore.GameData/   data-driven definitions, JSON loader, validator
-Server/            Dedicated match server (.NET 8) + Dockerfile
-Data/              Game balance & content definitions (JSON) — no balance values in code
-Tools/             Data validator (and future content/benchmark tools)
-Tests/             xUnit test projects
-docs/              Architecture, networking, gameplay, performance, deployment, ADRs
-.github/           CI workflows, PR template, CODEOWNERS, Dependabot
+packages/
+  shared/   game data (JSON), terrain & maps, authoritative simulation, AI bot, network protocol
+  server/   Node game server: HTTP (serves the client), WebSocket lobby/matches, benchmark & bot scripts
+  client/   browser client: rendering (Three.js), input, HUD, menus, audio
+scripts/    headless-browser smoke, gameplay and battle screenshot scripts
+docs/       architecture, networking, gameplay, performance, deployment, roadmap, ADRs
+Client/ Shared/ Server/ Tools/ Tests/   legacy C#/Unity prototype from the first iteration (superseded)
 ```
 
-## Getting started
-
-### Prerequisites
-
-* .NET SDK 8.0 (see `global.json`)
-* Unity **6000.0 LTS** (version pinned in `Client/ProjectSettings/ProjectVersion.txt`) with Android Build Support
-  (and iOS Build Support on macOS) — only needed for the client
-* Git LFS (`git lfs install`) — binary assets are stored in LFS
-* Docker — optional, for building the server image
-
-### Clone
+## Development
 
 ```bash
-git clone https://github.com/m1kava/Conflict-Core.git
-cd Conflict-Core
-git lfs pull
+npm install
+npm run dev          # server on :8080 (auto-restart) + Vite dev client on :5173 (proxying /ws)
+npm test             # 62 unit, simulation, rendering-budget and server integration tests
+npm run check        # typecheck + lint + format check + tests + data validation (what CI runs)
+npm run simulate     # headless AI-vs-AI match on the real simulation
+npm run benchmark    # server tick time and bandwidth at 10–400 units
 ```
 
-### Configure
-
-No secrets are needed for local development. Server settings live in
-`Server/ConflictCore.Server/appsettings.json` and can be overridden with environment variables
-(`MatchServer__Port=7778`) or command-line arguments (`--MatchServer:TickRate=20`).
-
-### Build and test everything that does not need Unity
-
-```bash
-dotnet build ConflictCore.sln
-dotnet test ConflictCore.sln
-dotnet format ConflictCore.sln --verify-no-changes   # style gate used by CI
-dotnet run --project Tools/ConflictCore.DataValidator -- Data
-```
-
-### Run the match server locally
-
-```bash
-dotnet run --project Server/ConflictCore.Server -- --MatchServer:DataDirectory=Data
-# or
-docker build -f Server/Dockerfile -t conflictcore/match-server:dev .
-docker run --rm -p 7777:7777/udp conflictcore/match-server:dev
-```
-
-Phase 1 status: the server loads and validates game data and runs the fixed-tick loop with a placeholder
-simulation. Networking arrives in Phase 4.
-
-### Run the client
-
-1. Open `Client/` in Unity Hub with the pinned Unity 6 version (first import takes a while).
-2. Run **Conflict Core → Apply Project Setup** (creates the URP mobile pipeline asset, the Bootstrap scene and
-   player settings). Restart the editor when asked (input handling switch).
-3. Open `Assets/_Project/Scenes/Bootstrap.unity` and press Play. Mouse drag simulates touch; the sandbox shows
-   placeholder terrain with the RTS camera (drag to pan with inertia; pinch/twist on device).
-
-### Run client tests
-
-* Engine-free logic: included in `dotnet test` above.
-* Unity EditMode tests: *Window → General → Test Runner → EditMode → Run All*.
-
-### Build Android
-
-* **Locally:** *File → Build Profiles → Android*, or batch mode:
-  ```bash
-  Unity -batchmode -quit -projectPath Client \
-    -executeMethod ConflictCore.Client.Editor.BuildScript.BuildAndroid \
-    -customBuildPath Builds/Android/ConflictCore.apk -developmentBuild
-  ```
-* **CI:** the *Unity Client* workflow builds a development APK on pushes to `develop`/`main` once the
-  `UNITY_LICENSE`, `UNITY_EMAIL`, `UNITY_PASSWORD` secrets exist. Tagging `vX.Y.Z` runs *Android Release*, which
-  builds a signed AAB in the protected `production` environment. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
-
-## How deployment works
-
-Pull requests run CI (format, build, tests, data validation, server image build, secret scan). Merges to
-`develop` publish a `:develop` server image; merges to `main` publish `:main`; version tags publish `:X.Y.Z` and a
-signed Android bundle. Promotion to staging/production fleets is gated by GitHub Environments with required
-reviewers (fleet rollout jobs are PLANNED for Phase 9/10). Details: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Developer tools (never enabled in production): start the server with `DEV_TOOLS=1` and open
+`http://localhost:8080/?battle=200` for a scripted 200-unit battle; add `?debug` for test hooks.
+Press **F3** in a match for the performance overlay.
 
 ## Documentation
 
 | Document | Contents |
 |---|---|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture proposal, engine choice, diagrams, module boundaries, status |
-| [NETWORKING.md](docs/NETWORKING.md) | Server-authoritative model, protocol, snapshots, fog, reconnect, anti-cheat |
-| [GAMEPLAY.md](docs/GAMEPLAY.md) | Factions, units, economy, combat model, mobile controls |
-| [BACKEND.md](docs/BACKEND.md) | Backend services, matchmaking, accounts, database schema |
-| [PERFORMANCE.md](docs/PERFORMANCE.md) | Mobile performance strategy and budgets |
-| [ASSET_PIPELINE.md](docs/ASSET_PIPELINE.md) | Asset sourcing, licensing, LODs, textures, import rules |
-| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | CI/CD, environments, secrets, versioning, release flow |
-| [ROADMAP.md](docs/ROADMAP.md) | Phases, milestones, risks |
-| [VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) | First playable milestone specification |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Branching, coding conventions, review rules |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, module boundaries, implementation status |
+| [NETWORKING.md](docs/NETWORKING.md) | Authority model, protocol, snapshots, fog, reconnect, anti-cheat |
+| [GAMEPLAY.md](docs/GAMEPLAY.md) | Factions, units, economy, combat, controls |
+| [PERFORMANCE.md](docs/PERFORMANCE.md) | Budgets and measured benchmark results |
+| [ASSET_PIPELINE.md](docs/ASSET_PIPELINE.md) | How models, textures, effects and sounds are produced |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | CI, Docker, free hosting, versioning |
+| [BACKEND.md](docs/BACKEND.md) | Planned accounts/rankings backend and database |
+| [ROADMAP.md](docs/ROADMAP.md) | Milestones and risks |
+| [VERTICAL_SLICE.md](docs/VERTICAL_SLICE.md) | First complete playable milestone |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Conventions and workflow |
 | [docs/adr/](docs/adr) | Architecture decision records |

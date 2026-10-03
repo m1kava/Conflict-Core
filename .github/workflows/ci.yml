@@ -1,5 +1,4 @@
-# Core CI: runs on every push and pull request. Must be green before anything merges.
-# Covers everything that builds without a Unity licence: shared code, server, client logic, tools, data.
+# CI: runs on every push and pull request. Must be green before anything merges.
 name: CI
 
 on:
@@ -15,68 +14,60 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  DOTNET_NOLOGO: true
-  DOTNET_CLI_TELEMETRY_OPTOUT: true
-  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-
 jobs:
-  dotnet:
-    name: Build, lint & test (.NET)
+  web:
+    name: Typecheck, lint, test, build (game)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-node@v4
         with:
-          global-json-file: global.json
-          cache: true
-          cache-dependency-path: "**/packages.lock.json"
-
-      - name: Restore
-        run: dotnet restore ConflictCore.sln --locked-mode
-
-      - name: Check formatting & code style
-        run: dotnet format ConflictCore.sln --no-restore --verify-no-changes --verbosity minimal
-
-      - name: Build (warnings are errors)
-        run: dotnet build ConflictCore.sln --no-restore -c Release
-
-      - name: Test
-        run: >
-          dotnet test ConflictCore.sln --no-build -c Release
-          --logger "trx;LogFilePrefix=results"
-          --collect:"XPlat Code Coverage"
-          --results-directory TestResults
-
-      - name: Validate game data
-        run: dotnet run --project Tools/ConflictCore.DataValidator -c Release --no-build -- Data
-
-      - name: Upload test results
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Formatting
+        run: npm run format:check
+      - name: Unit, simulation and server integration tests
+        run: npm test
+      - name: Validate game data and maps
+        run: npm run validate-data
+      - name: Build client and server
+        run: npm run build
+      - name: Server performance benchmark (report only)
+        run: npm run benchmark -- 100,300 30 | tee benchmark.md
+      - name: Browser smoke test (headless Chromium, WebGL via SwiftShader)
+        run: |
+          npx playwright install --with-deps chromium
+          PORT=8080 node packages/server/dist/server.mjs &
+          sleep 2
+          node scripts/smoke.mjs http://localhost:8080 screenshots
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: TestResults
+          name: smoke-screenshots
+          path: |
+            screenshots
+            benchmark.md
           retention-days: 14
 
-  server-image:
-    name: Build match server image
+  docker:
+    name: Build container image
     runs-on: ubuntu-latest
-    needs: dotnet
+    needs: web
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - name: Build (no push)
-        uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v6
         with:
           context: .
-          file: Server/Dockerfile
           push: false
-          tags: conflictcore/match-server:ci
-          build-args: VERSION=${{ github.sha }}
+          tags: conflict-core:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -92,3 +83,16 @@ jobs:
         run: >
           docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.21.2
           detect --source /repo --redact --verbose --exit-code 1
+
+  legacy-dotnet:
+    name: Legacy C# prototype (to be removed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet restore ConflictCore.sln --locked-mode
+      - run: dotnet build ConflictCore.sln --no-restore -c Release
+      - run: dotnet test ConflictCore.sln --no-build -c Release

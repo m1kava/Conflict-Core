@@ -1,33 +1,30 @@
 # Roadmap
 
-Development is vertical: each phase ends with something that runs, is tested and is documented. Content quantity
-comes last; no new units before the multiplayer simulation is correct.
+Development is vertical: each milestone ends with something playable, tested and documented.
 
-| Phase | Goal | Exit criteria | Status |
-|---|---|---|---|
-| **1 Foundation** | Repo, conventions, architecture, shared deterministic core, protocol skeleton, data pipeline, mobile input & camera, placeholder terrain, CI | CI green; Unity project imports and Bootstrap scene runs on an Android device with touch camera; first Unity CI run green | **In progress** — everything except on-device/Unity CI verification done |
-| **2 RTS core** | Simulation library: world, selection, movement, pathfinding (grid + flow fields), formations, commands, basic tank, combat, health, destruction | 100 tanks path across a test map without jams; deterministic hash identical across runs; client renders a local (in-process server) simulation | Planned |
-| **3 Base building** | Builder, placement validation, construction, supply economy, production queues, power | Build a base, harvest, produce units on the in-process server | Planned |
-| **4 Multiplayer core** | UDP transport, handshake + ticket verification, command intake/validation, fog-filtered delta snapshots, interpolation, disconnect/reconnect, net conditioner tests | Two clients on different networks play on a cloud server; 250 ms + 5 % loss playable; reconnect after 10 s outage | Planned |
-| **5 Complete test match** | One faction, 5–8 structures, 6–10 units, fog of war, win/loss, minimal professional HUD | Two remote players complete a full match | Planned |
-| **6 Performance** | Benchmark map & automated scenarios (10–300+ units), LOD/pooling/instancing, path & network optimisation, memory | Budgets in PERFORMANCE.md met on reference devices; results documented | Planned |
-| **7 Visual quality** | Licensed production assets, PBR, terrain, VFX, animation, audio, UI polish, asset import rules | Vertical slice looks shippable at RTS distance on High tier | Planned |
-| **8 Factions** | Bastion Union and Sable Front, tech trees, abilities, superweapons, aircraft, balance simulator | Three factions with distinct mechanics; balance sims within targets | Planned |
-| **9 Online platform** | Backend (auth, profiles, matchmaking, lobbies, results, ratings, history), DB migrations, fleet allocation, regions | Quick Match & private lobbies across two regions on staging | Planned |
-| **10 Production** | Security review, device lab testing, crash reporting, analytics, staging/production rollout, store builds (Android, iOS) | Soft launch | Planned |
+| Milestone | Scope | Status |
+|---|---|---|
+| **1 Foundation** | Repository, conventions, architecture, shared data/protocol, CI | **Done** (re-platformed to browser/TypeScript, ADR 0005) |
+| **2 RTS core** | Selection, movement, pathfinding, formations, commands, combat, destruction | **Done** |
+| **3 Base building** | Engineers, placement, construction, supply economy, production, power | **Done** |
+| **4 Multiplayer core** | Authoritative server, protocol, fog-filtered snapshots, reconnect, validation | **Done** |
+| **5 Complete match** | One faction, 7 structures, 8 units, fog of war, win/loss, HUD, AI | **Done — playable** |
+| **6 Performance** | Benchmarks (10–400 units), snapshot deltas, instancing, pooling | **Mostly done**: server and bandwidth budgets met; real-device FPS profiling and unit LODs open |
+| **7 Visual & audio quality** | Procedural models, terrain, effects, procedural sound | **First pass done**; next: more model detail, animated tracks/infantry, music, building damage states |
+| **8 Factions** | Bastion Union, Sable Front, tech upgrades, abilities, aircraft, superweapons, balance simulator | Planned |
+| **9 Online platform** | Accounts, rankings, match history, multi-server matchmaking (BACKEND.md) | Planned |
+| **10 Production** | Security review, device lab testing, crash reporting, analytics (privacy-respecting), public hosting | Planned |
 
-## Major technical risks
+Next concrete steps (in order): real-device performance pass on a mid-range phone; network conditioner tests
+(latency/loss/jitter); second map; aircraft layer; Bastion Union faction; replay recording.
 
-| Risk | Impact | Likelihood | Mitigation |
-|---|---|---|---|
-| Server CPU cost per match (authoritative sim, 300 units) | Hosting cost, match density | Medium | Fixed 15 Hz tick, SoA data, spatial hashing, time-sliced pathing; server tick budget tracked from Phase 2; allocation-free hot paths |
-| Bandwidth spikes in large battles on mobile data | Rubber-banding, data usage | Medium | Interest management, delta + quantisation, priority/budgeted snapshots, events for projectiles; measured with net conditioner |
-| Pathfinding traffic jams with large tank groups | Core feel | High | Flow fields per group, formation slots, separation steering, unit-size-aware spacing; dedicated Phase 2 test scenarios |
-| Determinism regressions (needed for replays) | Replays/disputes break | Medium | Fixed-point only, golden-value tests in .NET **and** Unity EditMode, banned-API analyzers (PLANNED) |
-| Mobile GPU/thermal limits vs. "realistic" visuals | Visual target missed or devices overheat | High | Budgets per tier, LOD/impostors, ASTC, shader variant control, 30 FPS mode, adaptive render scale; profile on low-end devices early |
-| Touch controls for complex RTS micro | Player frustration | Medium | Engine-free gesture layer with tests, playtests from Phase 2, configurable thresholds, groups/army shortcuts |
-| Unity licensing / CI activation | Blocked builds | Low–Medium | Engine-independent core; game-ci; licence documented in DEPLOYMENT.md |
-| Asset licensing mistakes | Legal | Low | Licence register + CI coverage check, no ripped assets policy |
-| Cheating (maphack, speedhack, packet tampering) | Competitive integrity | Medium | Server authority, interest-managed fog, command validation, rate limits, packet HMAC, server-reported results |
-| Scope (three asymmetric factions, aircraft, superweapons) | Delays | High | Vertical slice first; one faction until Phase 8; data-driven content to scale production |
-| Reconnect edge cases (IP change, duplicate commands) | Lost matches | Medium | Resume tokens + command sequence dedupe already in protocol; conditioner tests for outages |
+## Risks
+
+| Risk | Mitigation |
+|---|---|
+| Low-end phones struggle with WebGL at large battles | Quality presets (Low disables shadows, lowers resolution and vegetation), instancing, particle caps; device profiling is the next step |
+| Server cost with many simultaneous matches | 1.6 ms per tick at 300 units → dozens of matches per core; matches are independent and can be spread over processes |
+| Network quality on mobile | Small field-delta snapshots, reconnect with full resync and command resend; conditioner tests planned |
+| Cheating | Server authority, fog by omission, strict validation and rate limits; no client-side game state is trusted |
+| Free hosting sleeps when idle | Documented; any always-on host can run the same container |
+| Scope (three asymmetric factions, aircraft) | Data-driven content and one complete faction first |

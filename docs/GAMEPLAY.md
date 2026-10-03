@@ -4,21 +4,23 @@ Original game design inspired by the *style* of classic modern-military PC RTS (
 building; power economy; hard counters; tech; superweapons). No names, units, maps, art or audio from existing
 games are used.
 
-Status: design document. Implemented data: Halcyon units/weapons (draft balance), combat matrix, veterancy.
+Status: the Halcyon Accord, the economy, construction, production, combat, veterancy, fog of war, the AI and the
+controls below are implemented and playable. Other factions, aircraft and superweapons are designed but not yet
+implemented. All balance values live in `packages/shared/data/*.json`.
 
 ## Match structure
 
 * 10–30 minute matches; 1v1 first, architecture supports up to 8 players (2v2…4v4, FFA, co-op vs bots).
-* Default victory: destroy all enemy **production and command structures** (non-critical structures such as walls
-  and power plants don't keep a player alive). Surrender is a command. Victory is decided by the server only.
-* Starting state: Command HQ + 1–2 builders + starting credits (data-driven per game mode).
+* Victory: a player is defeated when they have no **critical structures** (HQ, Supply Depot, Barracks, Vehicle
+  Plant — finished or under construction) and no engineers left. Surrender is a command. The server decides.
+* Starting state: Command HQ, one engineer and 3,000 credits (data-driven per faction).
 
 ## Economy
 
 | Resource | Source | Spent on |
 |---|---|---|
-| **Credits** | Supply trucks (harvester class) haul from finite **supply fields** to a depot; capturable neutral sites yield a trickle | Units, structures, upgrades, abilities |
-| **Power** | Power plants (+), most structures (−) | Not spent: if demand > supply, production slows (×0.5), radar and advanced defenses go offline, superweapon timers pause |
+| **Credits** | Supply trucks haul 150 credits per trip from finite **supply fields** to a Supply Depot (each depot comes with one truck) | Units and structures; production is paid when queued and refunded on cancel; selling refunds 50 % |
+| **Power** | HQ (+5), Power Plants (+10); other structures consume | Not spent: if demand > supply, production runs at half speed, Guard Towers go offline and radar shuts down |
 | **Tech cores** *(PLANNED, Phase 8)* | Late-game capture points / research structures | Top-tier upgrades and superweapons |
 
 Design intent: expansions to richer supply fields are strategically necessary but exposed; trucks are the classic
@@ -82,7 +84,7 @@ Factions must differ in *how they play*, not just in stats; each gets unique mec
 Infantry · LightVehicle · HeavyVehicle · MainBattleTank · TankDestroyer · AntiAir · Artillery · RocketArtillery ·
 SupportVehicle · Transport · Helicopter · JetAircraft · Bomber · Drone · Builder · Harvester · Special
 
-### Halcyon vertical-slice roster (draft)
+### Halcyon roster (playable, first-pass balance)
 
 | Id | Class | Role | Counter-play |
 |---|---|---|---|
@@ -95,7 +97,15 @@ SupportVehicle · Transport · Helicopter · JetAircraft · Bomber · Drone · B
 | `halcyon_aa_vehicle` | AntiAir | SAM + autocannon air denial | Ground armor |
 | `halcyon_spg` | Artillery | Long-range HE, minimum range | Fast raiders |
 
-Structures for the slice are specified in [VERTICAL_SLICE.md](VERTICAL_SLICE.md).
+| Structure | Role | Power | Cost |
+|---|---|---|---|
+| Command HQ | Starting base, trains engineers | +5 | — |
+| Power Plant | Power | +10 | 600 |
+| Supply Depot | Truck drop-off, trains trucks, comes with one truck | −1 | 1000 |
+| Barracks | Infantry (rifle squad, AT team, engineer) | −2 | 500 |
+| Vehicle Plant | Recon, MBT, AA, SPG (needs Supply Depot) | −3 | 1600 |
+| Guard Tower | Autocannon + ATGM defence (needs Barracks) | −1 | 700 |
+| Radar Uplink | Minimap enemy contacts; unlocks AA and SPG (needs Barracks) | −4 | 1000 |
 
 ## Commands
 
@@ -127,18 +137,25 @@ Designed for thumbs on a 6" landscape phone first, then scaled up for tablets.
 |---|---|
 | One-finger drag | Pan camera (finger-locked, inertia on release) |
 | Pinch / two-finger twist | Zoom / rotate (rotation optional in settings) |
-| Tap own unit/building | Select (tap again on empty ground deselects) |
-| Tap ground (with selection) | Move (context: attack-move modifier button, waypoint mode) |
-| Tap enemy | Attack |
+| Tap own unit/building | Select |
+| Tap ground (with units selected) | Move in formation |
+| Tap enemy (with units selected) | Attack |
 | Double-tap unit | Select all visible units of that type |
 | Press and hold, then drag | Box selection |
-| Press and hold (no drag) | Context radial menu (stop, guard, patrol, formation, ability) |
-| Group bar (bottom-left) | 5 selection groups: tap to select, double-tap to centre camera, hold to assign |
-| Army shortcuts | "All army", "All idle", "All air" buttons |
+| Press and hold, release | Attack-move to that point |
+| Tap own damaged/unfinished structure with engineers | Repair / resume construction |
+| Tap supply field with trucks selected | Harvest |
+| Right-edge buttons | Select all combat units · attack-move toggle · clear selection |
 
-Gesture recognition is implemented and unit-tested (`Client/.../Logic/Gestures`). Thresholds scale with screen DPI.
-The HUD layout keeps the command card right, minimap top-left, resources top-centre, selection groups bottom-left,
-inside the OS safe area.
+Desktop: left-click select (Shift adds), drag a box, double-click selects all visible of a type, right-click gives
+the context order (move / attack / harvest / repair / rally), right-drag pans, wheel zooms, Q/E or middle-drag
+rotates, arrows and screen edges scroll, `A` + click attack-moves, `S`/`H`/`G` stop/hold/guard, `Ctrl+1–9`
+assigns groups, `1–9` recalls (double press centres), Space centres on base, structure and unit hotkeys are shown
+on the command card. Touch: as in the table above; the right-edge buttons select the army, toggle attack-move and
+clear the selection; building placement shows Rotate / Build here / Cancel buttons.
+
+The HUD keeps resources and power top-left, network status top-right, minimap bottom-left, selection panel
+bottom-centre and command card bottom-right, inside the device safe area (notches, home indicators).
 
 ## Balance workflow
 
@@ -146,5 +163,5 @@ inside the OS safe area.
 2. `dotnet run --project Tools/ConflictCore.DataValidator -- Data` (also runs in CI).
 3. The content hash changes → old clients are rejected by servers running new data (and vice versa), which is the
    intended behaviour.
-4. Phase 6 adds a headless **balance simulator**: scripted fights between compositions using the real server
-   simulation, reporting time-to-kill and cost efficiency.
+4. `npm run simulate` plays AI-vs-AI matches on the real simulation; `npm run benchmark` runs scripted battles.
+   A dedicated balance simulator (time-to-kill and cost efficiency per matchup) is planned.

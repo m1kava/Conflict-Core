@@ -1,3 +1,4 @@
+# LEGACY (Unity prototype, superseded by the browser client in packages/client).
 # Unity client: EditMode tests and a development Android APK.
 # Requires repository secrets UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD (see docs/DEPLOYMENT.md).
 # Without them the job reports a notice and skips instead of failing, so forks and new clones stay green.

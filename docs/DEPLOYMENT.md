@@ -1,65 +1,59 @@
-# Deployment and CI/CD
+# Deployment
 
-## Branching
+## Run anywhere
 
-| Branch | Purpose | Protection |
+The game is one Node.js process that serves the browser client and the game server on a single port.
+
+```bash
+npm ci && npm run build
+PORT=8080 npm start            # → http://localhost:8080
+```
+
+or with Docker:
+
+```bash
+docker build -t conflict-core .
+docker run --rm -p 8080:8080 conflict-core
+```
+
+Environment variables:
+
+| Variable | Default | Meaning |
 |---|---|---|
-| `main` | Released / release-candidate code | Protected: PR only, CI green, 1 approval, linear history, no force push |
-| `develop` | Integration branch | Protected: PR only, CI green |
-| `feature/*`, `fix/*` | Work branches → PR into `develop` | — |
-| `release/*` | Stabilisation before a tag on `main` | PR only |
+| `PORT` | 8080 | HTTP/WebSocket port |
+| `HOST` | 0.0.0.0 | Bind address |
+| `MAX_CONNECTIONS` | 500 | Concurrent sockets |
+| `MAX_MATCHES` | 100 | Concurrent matches per process |
+| `APP_VERSION` | 0.2.0 | Reported in `/healthz` |
+| `LOG_LEVEL` | info | `debug` / `info` / `warn` / `error` (JSON-lines logs) |
+| `DEV_TOOLS` | unset | `1` enables development-only scripted battles. **Never set in production.** |
 
-Branch protection must be configured in GitHub settings (*Settings → Branches*): require the **CI** workflow's
-jobs (`Build, lint & test (.NET)`, `Build match server image`, `Secret scan`) as status checks, and *Unity Client*
-checks once the Unity licence secret is configured.
+Health check: `GET /healthz` → `{ ok, version, sessions, matches }`.
 
-## Workflows
+## Free hosting
 
-| Workflow | Trigger | What it does | Status |
-|---|---|---|---|
-| `ci.yml` | every push/PR | restore, `dotnet format` check, build (warnings = errors), tests + coverage, data validation, server Docker build, gitleaks secret scan | **IMPLEMENTED** |
-| `unity.yml` | PR/push touching Client, Shared, Data | EditMode tests; development APK artifact. Skips with a notice when the licence secret is absent | **IMPLEMENTED** (needs secrets) |
-| `android-release.yml` | tag `vX.Y.Z` / manual | signed AAB in the `production` environment; checks tag == `VERSION` | **IMPLEMENTED** (needs secrets); store upload **PLANNED** |
-| `server-image.yml` | push to `develop`/`main`, tags | builds and pushes `ghcr.io/<owner>/conflictcore-match-server` | **IMPLEMENTED** |
-| Backend build/deploy | — | API image, migration job, staged rollout | **PLANNED** (Phase 9) |
-| Fleet rollout (staging/production) | — | Agones fleet update per region, canary | **PLANNED** (Phase 9/10) |
-| iOS build | — | Xcode project + signing on macOS runner | **PLANNED** (needs Apple developer account) |
+`render.yaml` is a ready blueprint for Render's free plan: *New → Blueprint → select this repository*. Render builds
+the Dockerfile and gives the game a public `https://…onrender.com` URL (WebSockets work over `wss://` automatically).
+The free plan sleeps when idle; the first visitor after a pause waits about a minute.
 
-## Environments
+Other free or low-cost options that run the same container or `npm start`: Fly.io, Railway, Koyeb, Google Cloud Run
+(set min instances to 1 to keep matches alive), or any small VPS. One process handles many concurrent matches
+(see PERFORMANCE.md); matches live in memory, so a restart ends running matches.
 
-| Environment | Deployed from | Approval | Contents |
-|---|---|---|---|
-| `development` | every `develop` push | none | dev server images, dev-commands enabled in dev builds only |
-| `staging` | `release/*`, `main` | 1 reviewer | production-like; load tests, device tests |
-| `production` | tags `vX.Y.Z` | required reviewers | signed store builds, production fleets |
+## CI/CD (GitHub Actions)
 
-Configure them in *Settings → Environments* with required reviewers for `staging`/`production`. Secrets that only
-production may use (signing keys) are stored **in the environment**, not at repository level.
-
-## Secrets
-
-| Secret | Scope | Used by |
+| Workflow | Trigger | What it does |
 |---|---|---|
-| `UNITY_LICENSE`, `UNITY_EMAIL`, `UNITY_PASSWORD` | repository | Unity test/build workflows (game-ci activation) |
-| `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASS`, `ANDROID_KEYALIAS_NAME`, `ANDROID_KEYALIAS_PASS` | `production` environment | signed AAB |
-| `GITHUB_TOKEN` | automatic | GHCR push |
-| Backend/database/cloud credentials | per environment | PLANNED |
+| `ci.yml` | every push / PR | typecheck, lint, format check, 62 tests, data/map validation, build, server benchmark report, headless-browser smoke test with screenshots (artifact), Docker build, secret scan; legacy C# job until that code is removed |
+| `server-image.yml` | push to `main`, tags `v*` | builds and publishes `ghcr.io/<owner>/conflict-core` |
+| `unity.yml`, `android-release.yml` | — | legacy Unity prototype workflows; inactive (no licence / disabled by variable) |
 
-Rules: never commit credentials (gitleaks runs on every push; `.gitignore` blocks keystores and `.env`);
-never pass secrets on command lines that are echoed; rotate on exposure. The Android upload key is backed up
-outside GitHub; Play App Signing holds the app signing key.
+Branching: `main` (protected, PR + green CI), `develop`, `feature/*`, `fix/*`. Versions follow semver in
+`package.json`; `PROTOCOL_VERSION` (shared/constants.ts) is bumped on any wire change so outdated browsers are
+asked to reload instead of desyncing.
 
-## Versioning
+## Security notes
 
-* `VERSION` (repository root) is the single source of the semantic version for client and server builds.
-* Client build number = workflow run number (`androidVersionCode`).
-* `ProtocolInfo.Version` is bumped on any wire change; servers reject other protocol versions.
-* Servers enforce `MatchServer:MinimumClientVersion` (configuration, not code) and the game-data hash.
-* Releases: bump `VERSION` in a PR → merge → tag `vX.Y.Z` on `main` → release workflows.
-
-## Match server runtime
-
-* Container: `Server/Dockerfile` (non-root, .NET 8 runtime, UDP 7777, data baked into the image so server and data
-  versions never drift).
-* Configuration via environment variables (`MatchServer__Port`, `MatchServer__TickRate`, `MatchServer__MinimumClientVersion`, ...).
-* One match per process; process exits when the match ends; orchestrator (Agones) recycles it.
+No secrets are needed to build or run the game. The server sends strict security headers (CSP, `nosniff`,
+`frame-ancestors 'none'`, no referrer), validates every message, rate-limits connections and commands, and keeps
+all authority server-side. Development tools are off unless `DEV_TOOLS=1`.

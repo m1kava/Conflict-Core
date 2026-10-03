@@ -1,67 +1,36 @@
 # Asset pipeline
 
-Status: **PLANNED (Phase 7)** for production content. The repository currently contains **no production art**;
-the only visuals are runtime-generated, explicitly labelled placeholders (`PlaceholderTerrainBuilder`).
+## Current approach: everything is generated from code
 
-## Sourcing and licensing rules
+The game ships **no downloaded or third-party art or audio**. All visuals and sounds are created procedurally
+by original code in this repository, which means there are no licences to track and nothing to pay for:
 
-1. Only properly licensed assets: Unity Asset Store (Standard EULA), Fab, Sketchfab (CC-BY / CC0 / Standard),
-   CGTrader (royalty-free), Poly Haven (CC0), Kenney/Quaternius (CC0, where the style fits), commissioned work, or
-   in-house work.
-2. **Never** import assets ripped from commercial games, "fan remakes" of existing game units, or anything whose
-   licence forbids redistribution in a game build or modification.
-3. Before an asset is merged, add a row to [ASSET_LICENSES.md](ASSET_LICENSES.md): asset, source URL, author,
-   licence, usage rights, attribution text, date, who verified. CI checks (Phase 7) that every file under
-   `Client/Assets/_Project/Art` is covered by an entry.
-4. Attribution required by a licence is collected into the in-game credits screen.
-5. A placeholder must be named `*_PLACEHOLDER*`, live under `Art/Placeholders/`, and have a replacement ticket.
+| Asset type | How it is produced | Where |
+|---|---|---|
+| Unit models (tank, recon, AA, artillery, truck, infantry) | Assembled from extruded profiles, bevelled boxes, cylinders and lathe shapes into one vertex-coloured mesh per part (hull, turret, team markings) | `packages/client/src/render/models/units.ts` |
+| Structure models | Same builder; moving parts (radar dish, tower turret) are separate meshes | `render/models/buildings.ts` |
+| Terrain | Mesh from the shared analytic height function; vertex colours by slope, height, roads, river banks, base areas; tiling procedural detail texture | `render/terrainMesh.ts` |
+| Vegetation, rocks, water, bridge | Instanced procedural meshes, seeded placement from map data | `render/environment.ts` |
+| Textures (detail, panel wear, smoke, scorch, glow) | Generated on canvases at start-up (seamless noise) | `render/textures.ts` |
+| Effects | GPU point sprites, line tracers, instanced decals | `render/effects.ts`, `render/particles.ts` |
+| UI icons | Original line-art SVG paths in code | `ui/icons.ts` |
+| Sound | Synthesised with WebAudio (filtered noise, oscillators, envelopes) | `audio/sound.ts` |
 
-## Folder structure (Unity)
+Modelling conventions: metres, +Y up, models face +X (the simulation heading maps directly to a rotation about Y),
+turret pivots at the turret ring. Team colour is applied through separate "team" geometry rendered with a per-instance
+colour, so one model serves every player.
 
-```
-Client/Assets/_Project/Art/
-  Units/<Faction>/<Unit>/        Meshes (FBX), Textures, Materials, Prefab, LOD group
-  Structures/<Faction>/<Name>/
-  Environment/{Terrain,Props,Vegetation,Skies}/
-  VFX/{Muzzle,Impact,Explosions,Trails,Smoke}/
-  UI/{Icons,Portraits,HUD,Fonts}/
-  Placeholders/
-Client/Assets/_Project/Audio/{Weapons,Vehicles,Voice,UI,Ambience,Music}/
-```
+Budgets per model (current): main battle tank ≈ 3 k triangles, infantry soldier ≈ 0.6 k, largest structure ≈ 6 k.
+Because units are instanced, draw calls do not grow with army size.
 
-Addressable keys follow the definition references in `Data/` (e.g. `units/halcyon/mbt_lod0`), so content is
-resolved from data, never from hard-coded paths.
+## Upgrading to authored models later
 
-## Modelling standards
+If authored models are added (e.g. glTF from Blender or CC0 sources), follow these rules:
 
-* Real-world scale (1 unit = 1 m), +Y up, forward +Z; pivots at ground contact centre; turret and barrel as separate
-  child transforms with pivots at the rotation axes (turret ring, trunnion).
-* Correct military proportions, recognisable silhouettes from the RTS camera (top-down 45–60°).
-* Tracks: shared track mesh with UV-scrolling material + road wheel rotation; suspension illusion via a few bones or
-  vertex animation — no physics.
-* Damage: intact / damaged (decals + emissive embers) / destroyed (pre-authored wreck mesh). Wrecks are pooled and
-  removed by rule.
-* LOD0–LOD3 per [PERFORMANCE.md](PERFORMANCE.md#asset-budgets-per-unit-at-its-lods); LOD3 may be a baked impostor.
-* Collision: none on visual meshes; gameplay uses data-defined radii and footprints.
-
-## Textures and materials
-
-* PBR metallic workflow, URP Lit (or a shared custom lit shader with stripped variants): BaseColor, Normal,
-  MaskMap (metallic, AO, detail mask, smoothness).
-* Resolution by screen importance: hero/large ≤ 2 K, normal vehicles 1–2 K, small units 512–1 K, props 256–512.
-  Never 4 K in the build.
-* Faction/team colour via a mask channel and material property (no texture duplicates per team).
-* Trim sheets and atlases for structures and props; material count per unit ≤ 2.
-* Compression: ASTC (6×6 default, 4×4 for normals/UI where needed) on Android and iOS; mipmaps on for 3D.
-
-## VFX and audio
-
-* Pooled particle systems with per-tier particle caps; flipbook explosions and smoke; no real-time lights per
-  explosion on Low/Medium.
-* Audio: Vorbis/AAC compressed, streamed music; voice limits and priority classes (UI > alerts > weapons > ambience).
-
-## Import automation (Phase 7)
-
-`AssetPostprocessor` rules enforce: texture max size by folder, ASTC formats, mipmaps, read/write disabled, mesh
-compression, no imported cameras/lights, required LOD group on unit/structure prefabs. A CI check (Unity batch
-mode) reports violations.
+1. Only original work or assets with a licence that permits redistribution in a game (CC0, CC-BY with attribution,
+   or a purchased/commissioned licence). Never assets ripped from commercial games.
+2. Record each asset in [ASSET_LICENSES.md](ASSET_LICENSES.md) before merging (source, author, licence, attribution).
+3. Keep the part split (hull / turret / team mask) and the +X-forward convention so the instanced renderer and
+   turret logic keep working; provide LOD0–LOD2 for vehicles; textures ≤ 1 K for units, ≤ 2 K for structures,
+   compressed (KTX2/Basis) for the web.
+4. Load through a single model registry keyed by the `model` field in `packages/shared/data/*.json`.

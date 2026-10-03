@@ -1,14 +1,11 @@
-# Publishes the match server container image to GitHub Container Registry.
-#   develop → :develop (+ sha)    main → :main (+ sha)    tag vX.Y.Z → :X.Y.Z
-# Rollout to the staging / production fleets is PLANNED (Phase 9/10, see docs/DEPLOYMENT.md); those jobs
-# will be added behind the "staging" and "production" environments with required reviewers.
-name: Server Image
+# Publishes the game image (server + built client) to GitHub Container Registry.
+#   main → :main (+ sha)    tag vX.Y.Z → :X.Y.Z
+name: Game Image
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     tags: ["v*.*.*"]
-    paths: ["Server/**", "Shared/**", "Data/**", "Directory.*.props", "global.json", "VERSION", ".github/workflows/server-image.yml"]
   workflow_dispatch:
 
 permissions:
@@ -21,9 +18,6 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Read version
-        id: version
-        run: echo "value=$(cat VERSION)" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -33,7 +27,7 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/conflictcore-match-server
+          images: ghcr.io/${{ github.repository_owner }}/conflict-core
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -41,10 +35,8 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: Server/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: VERSION=${{ steps.version.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

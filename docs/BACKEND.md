@@ -1,7 +1,10 @@
 # Backend and database
 
-Status: **PLANNED (Phase 9)**. Protocol hooks already exist (join tickets, resume tokens, version policy).
-This document fixes the architecture now so that client and match server are built against it.
+Status: **PLANNED**. The game is fully playable without a backend: identity is a per-browser session token,
+matchmaking and rooms run in memory inside the game server. A backend becomes necessary for persistent accounts,
+rankings, match history and multi-server matchmaking. This document fixes its design so it can be added without
+changing the game protocol's authority model. It can be built with free/open-source components (Node or similar,
+PostgreSQL) and hosted on free tiers.
 
 ## Separation of concerns
 
@@ -12,14 +15,13 @@ This document fixes the architecture now so that client and match server are bui
 | **Backend API** | Auth, profiles, matchmaking, lobbies, results ingestion, leaderboards, inventory, remote config | Simulate gameplay |
 | **Database** | Persistent player and match data | High-frequency simulation state |
 
-## Services (ASP.NET Core, stateless, horizontally scaled)
+## Services (stateless HTTP API, horizontally scaled)
 
 Starts as one deployable ("modular monolith") with clear module boundaries; modules split into services only when
 load or team structure justifies it.
 
-* **Auth** — guest accounts (device-bound credential + server-generated secret stored in the platform keystore),
-  Google Sign-In and Sign in with Apple (ID token verified server-side), account linking (guest → registered,
-  merge rules), short-lived JWT access tokens (15 min) + rotating refresh tokens. Rate-limited.
+* **Auth** — guest accounts (the existing browser session token upgraded to a server-issued credential), optional
+  Google sign-in (free OAuth), account linking, short-lived access tokens + rotating refresh tokens. Rate-limited.
 * **Profiles** — display name (validated, profanity-filtered), avatar, level/XP, stats, settings sync, cosmetics.
 * **Matchmaking** — Quick Match queue per region/mode/MMR band in Redis; widening search window over time;
   party support later. On match found: request a server from the regional fleet allocator, then issue each player
