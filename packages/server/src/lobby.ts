@@ -1,4 +1,3 @@
-import { randomBytes, randomUUID } from 'node:crypto';
 import {
   PROTOCOL_VERSION,
   getMap,
@@ -14,6 +13,12 @@ import { Session, type Peer } from './session';
 const SESSION_EXPIRY_MS = 15 * 60_000;
 const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const DEFAULT_MAP = 'ashfall_crossing';
+
+/** 192-bit secret as base64url, via Web Crypto so the lobby also runs in a browser worker (offline mode). */
+function randomToken(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(24));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
 
 interface RoomSlot {
   session?: Session;
@@ -76,7 +81,7 @@ export class Lobby {
       }
       return existing;
     }
-    const session = new Session(randomUUID(), randomBytes(24).toString('base64url'), message.name, peer);
+    const session = new Session(crypto.randomUUID(), randomToken(), message.name, peer);
     this.sessionsByToken.set(session.token, session);
     peer.sendJson({ t: 'welcome', clientId: session.id, token: session.token, serverVersion: this.options.version, name: session.name });
     return session;
@@ -375,7 +380,7 @@ export class Lobby {
 
   private newRoomCode(): string {
     for (;;) {
-      const bytes = randomBytes(5);
+      const bytes = crypto.getRandomValues(new Uint8Array(5));
       let code = '';
       for (const byte of bytes) {
         code += ROOM_CODE_ALPHABET[byte % ROOM_CODE_ALPHABET.length];
@@ -398,7 +403,7 @@ export class Lobby {
         seat.session.match.leave(seat.session);
       }
     }
-    const match = new Match(randomUUID(), seats, (m) => this.matches.delete(m));
+    const match = new Match(crypto.randomUUID(), seats, (m) => this.matches.delete(m));
     if (battleUnits > 0) {
       setupBattleScenario(match.world, Math.round(battleUnits / 2));
     }

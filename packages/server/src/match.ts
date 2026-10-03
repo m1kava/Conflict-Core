@@ -52,7 +52,7 @@ export class Match {
   readonly players: MatchPlayerView[];
   private readonly humans = new Map<number, HumanSeat>();
   private readonly bots: Bot[] = [];
-  private timer: NodeJS.Timeout | null = null;
+  private timer: ReturnType<typeof setTimeout> | null = null;
   private nextTickAt = 0;
   private ended = false;
   private endedAt = 0;

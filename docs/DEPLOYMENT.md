@@ -30,7 +30,20 @@ Environment variables:
 
 Health check: `GET /healthz` → `{ ok, version, sessions, matches }`.
 
-## Free hosting
+## GitHub Pages (static, no server)
+
+`.github/workflows/pages.yml` builds the client with `VITE_STATIC=1` and publishes it to
+<https://m1kava.github.io/Conflict-Core/>. Pages cannot run Node, so in that build the server's own `Lobby` and
+`Match` code runs in a Web Worker on the player's device (`packages/client/src/net/localServer.worker.ts`) and the
+client talks to it through the same protocol it uses over WebSockets. AI matches work fully; quick match and
+private rooms are hidden. To enable them on Pages, run the server somewhere (below) and set the repository variable
+`GAME_SERVER_URL` (Settings → Secrets and variables → Actions → Variables) to its address, e.g.
+`wss://conflict-core.onrender.com/ws`.
+
+If the first Pages run fails with "Get Pages site failed", enable Pages once under Settings → Pages → Source:
+**GitHub Actions** and re-run the workflow.
+
+## Free hosting (full online multiplayer)
 
 `render.yaml` is a ready blueprint for Render's free plan: *New → Blueprint → select this repository*. Render builds
 the Dockerfile and gives the game a public `https://…onrender.com` URL (WebSockets work over `wss://` automatically).

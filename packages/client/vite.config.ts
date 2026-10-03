@@ -2,6 +2,9 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  // Relative asset URLs: the same build works at a domain root or under a sub-path (GitHub Pages).
+  base: './',
+  worker: { format: 'es' },
   resolve: {
     alias: {
       '@conflict/shared': fileURLToPath(new URL('../shared/src/index.ts', import.meta.url)),

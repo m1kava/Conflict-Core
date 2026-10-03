@@ -1,4 +1,5 @@
 import { PROTOCOL_VERSION, SnapshotDecoder, type ClientMessage, type Command, type DecodedSnapshot, type ServerMessage } from '@conflict/shared';
+import { createTransport, type Transport } from './transport';
 
 export type ConnectionState = 'connecting' | 'online' | 'reconnecting' | 'offline';
 
@@ -31,7 +32,7 @@ export class Connection {
   state: ConnectionState = 'offline';
   rttMs = 0;
   bytesIn = 0;
-  private socket: WebSocket | null = null;
+  private socket: Transport | null = null;
   private attempts = 0;
   private seq = 0;
   private unacked: { seq: number; command: Command }[] = [];
@@ -49,7 +50,7 @@ export class Connection {
   }
 
   send(message: ClientMessage): void {
-    if (this.socket?.readyState === WebSocket.OPEN) {
+    if (this.socket?.open) {
       this.socket.send(JSON.stringify(message));
     }
   }
@@ -87,9 +88,7 @@ export class Connection {
   }
 
   private open(): void {
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(`${protocol}//${location.host}/ws`);
-    socket.binaryType = 'arraybuffer';
+    const socket = createTransport();
     this.socket = socket;
     this.setState(this.attempts === 0 ? 'connecting' : 'reconnecting');
 
@@ -100,26 +99,26 @@ export class Connection {
       window.clearInterval(this.pingTimer);
       this.pingTimer = window.setInterval(() => this.send({ t: 'ping', time: performance.now() }), PING_INTERVAL_MS);
     };
-    socket.onmessage = (event: MessageEvent<string | ArrayBuffer>) => {
-      if (typeof event.data === 'string') {
-        this.bytesIn += event.data.length;
-        this.handleJson(event.data);
+    socket.onmessage = (data) => {
+      if (typeof data === 'string') {
+        this.bytesIn += data.length;
+        this.handleJson(data);
       } else {
-        this.bytesIn += event.data.byteLength;
+        this.bytesIn += data.byteLength;
         try {
-          this.handlers.onSnapshot(this.decoder.decode(event.data));
+          this.handlers.onSnapshot(this.decoder.decode(data));
         } catch (error) {
           console.error('Bad snapshot', error);
         }
       }
     };
-    socket.onclose = (event) => {
+    socket.onclose = (code) => {
       window.clearInterval(this.pingTimer);
       if (this.socket !== socket) {
         return;
       }
       this.socket = null;
-      if (this.stopped || event.code === 4001) {
+      if (this.stopped || code === 4001) {
         this.setState('offline');
         return;
       }

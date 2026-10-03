@@ -4,6 +4,7 @@ import { SoundEngine } from './audio/sound';
 import { GameController } from './game/gameController';
 import { loadSettings, saveSettings, type Settings } from './game/settings';
 import { Connection, type ConnectionState } from './net/connection';
+import { OFFLINE_MODE } from './net/transport';
 import { h } from './ui/dom';
 import * as screens from './ui/screens';
 
@@ -49,7 +50,7 @@ class App {
       this.withConnection(this.settings.name, () => this.connection.send({ t: 'devBattle', units: battle }));
     }
     const room = params.get('room');
-    if (room) {
+    if (room && !OFFLINE_MODE) {
       this.withConnection(this.settings.name, () => this.connection.send({ t: 'joinRoom', code: room.toUpperCase() }));
     }
   }
@@ -188,6 +189,7 @@ class App {
           openHelp: () => this.openModal(screens.helpModal(() => this.closeModal())),
         },
         this.connection.state === 'online',
+        OFFLINE_MODE,
       ),
     );
   }

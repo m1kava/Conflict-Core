@@ -11,6 +11,7 @@ PC RTS games; no copyrighted content is used.
 
 | How | Steps |
 |---|---|
+| **In the browser now (GitHub Pages)** | <https://m1kava.github.io/Conflict-Core/> — published automatically on every push. Pages hosts static files only, so the game server runs inside your browser: **Play vs AI** works fully; online modes need the hosted server (below). |
 | **Locally (one command)** | `npm install && npm run build && npm start` → open <http://localhost:8080> |
 | **With Docker** | `docker build -t conflict-core . && docker run --rm -p 8080:8080 conflict-core` |
 | **Online for free** | Deploy this repository on [Render](https://render.com) via *New → Blueprint* (uses `render.yaml`, free plan) and share the URL. Any host that runs a Docker container or Node 20+ works. |

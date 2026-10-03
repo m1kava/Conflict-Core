@@ -21,7 +21,8 @@ export interface MenuActions {
   openHelp(): void;
 }
 
-export function mainMenu(settings: Settings, actions: MenuActions, serverOnline: boolean): HTMLElement {
+/** `offline`: the game runs in this browser only (static hosting), so online modes are unavailable. */
+export function mainMenu(settings: Settings, actions: MenuActions, serverOnline: boolean, offline = false): HTMLElement {
   let difficulty: BotDifficulty = 'normal';
   const nameInput = h('input', { type: 'text', maxlength: 20, value: settings.name, autocomplete: 'nickname', 'aria-label': 'Callsign' });
   const codeInput = h('input', { type: 'text', maxlength: 8, placeholder: 'CODE', autocapitalize: 'characters', 'aria-label': 'Room code', style: 'text-transform:uppercase;letter-spacing:0.2em;font-family:var(--mono)' });
@@ -45,11 +46,15 @@ export function mainMenu(settings: Settings, actions: MenuActions, serverOnline:
       h('div', { class: 'field', style: 'margin:0' }, h('label', {}, 'Skirmish versus AI'), segmented),
       h('button', { class: 'btn primary', onclick: () => actions.playBot(name(), difficulty) }, 'Play vs AI'),
       h('div', { class: 'divider' }),
-      h('button', { class: 'btn', onclick: () => actions.quickMatch(name()) }, 'Quick Match — online 1v1'),
-      h('div', { class: 'row' },
-        h('button', { class: 'btn', onclick: () => actions.createRoom(name()) }, 'Create private room'),
-      ),
-      h('div', { class: 'row' }, codeInput, h('button', { class: 'btn', onclick: () => actions.joinRoom(name(), codeInput.value.trim().toUpperCase()) }, 'Join')),
+      ...(offline
+        ? [h('p', { class: 'muted', style: 'margin:0' }, 'Online matches need the game server. This page runs the game in your browser, so you can play against the AI.')]
+        : [
+            h('button', { class: 'btn', onclick: () => actions.quickMatch(name()) }, 'Quick Match — online 1v1'),
+            h('div', { class: 'row' },
+              h('button', { class: 'btn', onclick: () => actions.createRoom(name()) }, 'Create private room'),
+            ),
+            h('div', { class: 'row' }, codeInput, h('button', { class: 'btn', onclick: () => actions.joinRoom(name(), codeInput.value.trim().toUpperCase()) }, 'Join')),
+          ]),
       h('div', { class: 'divider' }),
       h('div', { class: 'row' },
         h('button', { class: 'btn', onclick: () => actions.openSettings() }, 'Settings'),
@@ -60,7 +65,7 @@ export function mainMenu(settings: Settings, actions: MenuActions, serverOnline:
   const brand = h(
     'div',
     { class: 'brand' },
-    h('span', { class: 'tag' }, serverOnline ? '● Server online' : '○ Connecting to server…'),
+    h('span', { class: 'tag' }, offline ? '● Playing in your browser' : serverOnline ? '● Server online' : '○ Connecting to server…'),
     h('div', { class: 'logo' }, h('div', { style: 'width:56px;height:56px' }, logo()), h('h1', {}, 'CONFLICT', h('span', {}, ' CORE'))),
     h('p', {}, 'Real-time strategy for the browser. Build a base, run your supply lines, field combined-arms forces and break the enemy in fast, tactical online matches — on desktop, tablet or phone.'),
     h('p', { class: 'muted' }, 'Faction: Halcyon Accord · Map: Ashfall Crossing · 1v1'),
