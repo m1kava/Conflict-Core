@@ -1,0 +1,599 @@
+{
+  "factions": [
+    {
+      "id": "halcyon",
+      "displayName": "Halcyon Accord",
+      "playable": true,
+      "startingBuilding": "halcyon_hq",
+      "startingUnits": [
+        "halcyon_engineer"
+      ],
+      "startingCredits": 3000,
+      "buildRadius": 42
+    }
+  ],
+  "units": [
+    {
+      "id": "halcyon_engineer",
+      "faction": "halcyon",
+      "class": "Builder",
+      "displayName": "Field Engineer",
+      "description": "Constructs and repairs structures. Unarmed.",
+      "health": 120,
+      "armorType": "infantry",
+      "movement": {
+        "locomotor": "Foot",
+        "speed": 4.6,
+        "acceleration": 12,
+        "turnRate": 540,
+        "radius": 0.7
+      },
+      "weapons": [],
+      "visionRadius": 24,
+      "detectionRadius": 0,
+      "cost": 250,
+      "buildTime": 8,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "model": "engineer",
+      "canConstruct": true,
+      "hotkey": "E"
+    },
+    {
+      "id": "halcyon_rifle_squad",
+      "faction": "halcyon",
+      "class": "Infantry",
+      "displayName": "Rifle Squad",
+      "description": "Four-soldier squad. Strong against infantry.",
+      "health": 220,
+      "armorType": "infantry",
+      "movement": {
+        "locomotor": "Foot",
+        "speed": 4.5,
+        "acceleration": 12,
+        "turnRate": 540,
+        "radius": 1.2
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_carbine",
+          "turreted": false
+        }
+      ],
+      "visionRadius": 32,
+      "detectionRadius": 0,
+      "cost": 200,
+      "buildTime": 7,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "model": "rifle_squad",
+      "hotkey": "R"
+    },
+    {
+      "id": "halcyon_at_team",
+      "faction": "halcyon",
+      "class": "Infantry",
+      "displayName": "Lancer AT Team",
+      "description": "Guided anti-tank missiles. Weak against infantry.",
+      "health": 160,
+      "armorType": "infantry",
+      "movement": {
+        "locomotor": "Foot",
+        "speed": 4.0,
+        "acceleration": 12,
+        "turnRate": 540,
+        "radius": 1.0
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_atgm_launcher",
+          "turreted": false
+        }
+      ],
+      "visionRadius": 34,
+      "detectionRadius": 0,
+      "cost": 350,
+      "buildTime": 9,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "model": "at_team",
+      "hotkey": "L"
+    },
+    {
+      "id": "halcyon_supply_truck",
+      "faction": "halcyon",
+      "class": "Harvester",
+      "displayName": "Supply Truck",
+      "description": "Hauls credits from supply fields to a Supply Depot.",
+      "health": 420,
+      "armorType": "light_vehicle",
+      "movement": {
+        "locomotor": "Wheeled",
+        "speed": 8.0,
+        "acceleration": 6,
+        "turnRate": 160,
+        "radius": 2.0
+      },
+      "weapons": [],
+      "visionRadius": 26,
+      "detectionRadius": 0,
+      "cost": 600,
+      "buildTime": 12,
+      "prerequisites": [],
+      "experienceValue": 0.5,
+      "model": "supply_truck",
+      "harvestCapacity": 150,
+      "harvestTime": 3,
+      "hotkey": "T"
+    },
+    {
+      "id": "halcyon_recon_vehicle",
+      "faction": "halcyon",
+      "class": "LightVehicle",
+      "displayName": "Kestrel Recon",
+      "description": "Fast scout with a 30 mm autocannon. Detects stealth.",
+      "health": 340,
+      "armorType": "light_vehicle",
+      "movement": {
+        "locomotor": "Wheeled",
+        "speed": 11.0,
+        "acceleration": 9,
+        "turnRate": 200,
+        "radius": 1.8
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_autocannon_30mm",
+          "turreted": true,
+          "turretTurnRate": 200
+        }
+      ],
+      "visionRadius": 48,
+      "detectionRadius": 20,
+      "cost": 550,
+      "buildTime": 10,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "model": "recon_vehicle",
+      "hotkey": "K"
+    },
+    {
+      "id": "halcyon_mbt",
+      "faction": "halcyon",
+      "class": "MainBattleTank",
+      "displayName": "Warden MBT",
+      "description": "Main battle tank. Fires on the move.",
+      "health": 900,
+      "armorType": "heavy_vehicle",
+      "movement": {
+        "locomotor": "Tracked",
+        "speed": 6.5,
+        "acceleration": 4,
+        "turnRate": 80,
+        "radius": 2.6
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_120mm_smoothbore",
+          "turreted": true,
+          "turretTurnRate": 70
+        }
+      ],
+      "visionRadius": 38,
+      "detectionRadius": 0,
+      "cost": 1100,
+      "buildTime": 18,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "model": "mbt",
+      "hotkey": "W"
+    },
+    {
+      "id": "halcyon_aa_vehicle",
+      "faction": "halcyon",
+      "class": "AntiAir",
+      "displayName": "Spire AA",
+      "description": "Surface-to-air missiles with an autocannon for light targets.",
+      "health": 520,
+      "armorType": "light_vehicle",
+      "movement": {
+        "locomotor": "Tracked",
+        "speed": 7.0,
+        "acceleration": 5,
+        "turnRate": 90,
+        "radius": 2.4
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_sam_pod",
+          "turreted": true,
+          "turretTurnRate": 120
+        },
+        {
+          "weapon": "halcyon_autocannon_30mm",
+          "turreted": true,
+          "turretTurnRate": 120
+        }
+      ],
+      "visionRadius": 52,
+      "detectionRadius": 0,
+      "cost": 900,
+      "buildTime": 15,
+      "prerequisites": [
+        "halcyon_radar_uplink"
+      ],
+      "experienceValue": 1.0,
+      "model": "aa_vehicle",
+      "hotkey": "A"
+    },
+    {
+      "id": "halcyon_spg",
+      "faction": "halcyon",
+      "class": "Artillery",
+      "displayName": "Meridian SPG",
+      "description": "Long-range 155 mm howitzer. Has a minimum range.",
+      "health": 480,
+      "armorType": "light_vehicle",
+      "movement": {
+        "locomotor": "Tracked",
+        "speed": 5.5,
+        "acceleration": 3,
+        "turnRate": 60,
+        "radius": 2.8
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_155mm_howitzer",
+          "turreted": true,
+          "turretTurnRate": 30
+        }
+      ],
+      "visionRadius": 30,
+      "detectionRadius": 0,
+      "cost": 1300,
+      "buildTime": 22,
+      "prerequisites": [
+        "halcyon_radar_uplink"
+      ],
+      "experienceValue": 1.0,
+      "model": "spg",
+      "hotkey": "M"
+    }
+  ],
+  "buildings": [
+    {
+      "id": "halcyon_hq",
+      "faction": "halcyon",
+      "displayName": "Command HQ",
+      "description": "Base of operations. Trains engineers.",
+      "health": 4000,
+      "armorType": "structure",
+      "width": 16,
+      "depth": 16,
+      "power": 5,
+      "cost": 2500,
+      "buildTime": 40,
+      "prerequisites": [],
+      "visionRadius": 44,
+      "produces": [
+        "halcyon_engineer"
+      ],
+      "critical": true,
+      "buildable": false,
+      "model": "hq"
+    },
+    {
+      "id": "halcyon_power_plant",
+      "faction": "halcyon",
+      "displayName": "Power Plant",
+      "description": "Generates power for the base.",
+      "health": 1200,
+      "armorType": "structure",
+      "width": 10,
+      "depth": 10,
+      "power": 10,
+      "cost": 600,
+      "buildTime": 12,
+      "prerequisites": [],
+      "visionRadius": 36,
+      "produces": [],
+      "critical": false,
+      "buildable": true,
+      "model": "power_plant"
+    },
+    {
+      "id": "halcyon_supply_depot",
+      "faction": "halcyon",
+      "displayName": "Supply Depot",
+      "description": "Receives supply deliveries. Trains supply trucks. Comes with one truck.",
+      "health": 1800,
+      "armorType": "structure",
+      "width": 12,
+      "depth": 12,
+      "power": -1,
+      "cost": 1000,
+      "buildTime": 15,
+      "prerequisites": [],
+      "visionRadius": 36,
+      "produces": [
+        "halcyon_supply_truck"
+      ],
+      "critical": true,
+      "buildable": true,
+      "model": "supply_depot",
+      "supplyDropOff": true,
+      "freeUnit": "halcyon_supply_truck"
+    },
+    {
+      "id": "halcyon_barracks",
+      "faction": "halcyon",
+      "displayName": "Barracks",
+      "description": "Trains infantry.",
+      "health": 1500,
+      "armorType": "structure",
+      "width": 12,
+      "depth": 12,
+      "power": -2,
+      "cost": 500,
+      "buildTime": 12,
+      "prerequisites": [],
+      "visionRadius": 36,
+      "produces": [
+        "halcyon_rifle_squad",
+        "halcyon_at_team",
+        "halcyon_engineer"
+      ],
+      "critical": true,
+      "buildable": true,
+      "model": "barracks"
+    },
+    {
+      "id": "halcyon_vehicle_plant",
+      "faction": "halcyon",
+      "displayName": "Vehicle Plant",
+      "description": "Builds combat vehicles.",
+      "health": 2500,
+      "armorType": "structure",
+      "width": 16,
+      "depth": 14,
+      "power": -3,
+      "cost": 1600,
+      "buildTime": 20,
+      "prerequisites": [
+        "halcyon_supply_depot"
+      ],
+      "visionRadius": 36,
+      "produces": [
+        "halcyon_recon_vehicle",
+        "halcyon_mbt",
+        "halcyon_aa_vehicle",
+        "halcyon_spg"
+      ],
+      "critical": true,
+      "buildable": true,
+      "model": "vehicle_plant"
+    },
+    {
+      "id": "halcyon_guard_tower",
+      "faction": "halcyon",
+      "displayName": "Guard Tower",
+      "description": "Defensive tower with autocannon and anti-tank missiles.",
+      "health": 1100,
+      "armorType": "structure",
+      "width": 4,
+      "depth": 4,
+      "power": -1,
+      "cost": 700,
+      "buildTime": 10,
+      "prerequisites": [
+        "halcyon_barracks"
+      ],
+      "visionRadius": 44,
+      "produces": [],
+      "critical": false,
+      "buildable": true,
+      "model": "guard_tower",
+      "weapons": [
+        {
+          "weapon": "halcyon_tower_gun",
+          "turreted": true,
+          "turretTurnRate": 180
+        },
+        {
+          "weapon": "halcyon_tower_atgm",
+          "turreted": true,
+          "turretTurnRate": 120
+        }
+      ]
+    },
+    {
+      "id": "halcyon_radar_uplink",
+      "faction": "halcyon",
+      "displayName": "Radar Uplink",
+      "description": "Enables the minimap and advanced vehicles.",
+      "health": 1000,
+      "armorType": "structure",
+      "width": 10,
+      "depth": 10,
+      "power": -4,
+      "cost": 1000,
+      "buildTime": 15,
+      "prerequisites": [
+        "halcyon_barracks"
+      ],
+      "visionRadius": 60,
+      "produces": [],
+      "critical": false,
+      "buildable": true,
+      "model": "radar_uplink",
+      "providesRadar": true
+    }
+  ],
+  "weapons": [
+    {
+      "id": "halcyon_carbine",
+      "delivery": "Hitscan",
+      "damage": 9,
+      "damageType": "small_arms",
+      "range": 30,
+      "reloadTime": 1.2,
+      "burstCount": 3,
+      "burstInterval": 0.15,
+      "accuracy": 0.8,
+      "targets": [
+        "Ground",
+        "Structure"
+      ],
+      "presentation": {
+        "muzzle": "rifle",
+        "projectile": "tracer",
+        "impact": "bullet"
+      }
+    },
+    {
+      "id": "halcyon_atgm_launcher",
+      "delivery": "Missile",
+      "damage": 85,
+      "damageType": "armor_piercing",
+      "range": 42,
+      "reloadTime": 4.5,
+      "accuracy": 0.9,
+      "projectileSpeed": 55,
+      "targets": [
+        "Ground",
+        "Structure"
+      ],
+      "presentation": {
+        "muzzle": "missile",
+        "projectile": "missile",
+        "impact": "medium"
+      }
+    },
+    {
+      "id": "halcyon_autocannon_30mm",
+      "delivery": "Hitscan",
+      "damage": 14,
+      "damageType": "autocannon",
+      "range": 38,
+      "reloadTime": 1.5,
+      "burstCount": 4,
+      "burstInterval": 0.12,
+      "accuracy": 0.75,
+      "splashRadius": 1.0,
+      "splashEdgeFactor": 0.5,
+      "targets": [
+        "Ground",
+        "Air",
+        "Structure"
+      ],
+      "presentation": {
+        "muzzle": "autocannon",
+        "projectile": "tracer",
+        "impact": "small"
+      }
+    },
+    {
+      "id": "halcyon_120mm_smoothbore",
+      "delivery": "Projectile",
+      "damage": 70,
+      "damageType": "armor_piercing",
+      "range": 45,
+      "reloadTime": 3.2,
+      "accuracy": 0.85,
+      "projectileSpeed": 160,
+      "splashRadius": 1.5,
+      "splashEdgeFactor": 0.3,
+      "targets": [
+        "Ground",
+        "Structure"
+      ],
+      "presentation": {
+        "muzzle": "cannon",
+        "projectile": "shell",
+        "impact": "medium"
+      }
+    },
+    {
+      "id": "halcyon_sam_pod",
+      "delivery": "Missile",
+      "damage": 60,
+      "damageType": "anti_air",
+      "range": 70,
+      "reloadTime": 3.0,
+      "burstCount": 2,
+      "burstInterval": 0.4,
+      "accuracy": 0.95,
+      "projectileSpeed": 120,
+      "targets": [
+        "Air"
+      ],
+      "presentation": {
+        "muzzle": "sam",
+        "projectile": "missile",
+        "impact": "air"
+      }
+    },
+    {
+      "id": "halcyon_155mm_howitzer",
+      "delivery": "Ballistic",
+      "damage": 110,
+      "damageType": "high_explosive",
+      "range": 110,
+      "minRange": 25,
+      "reloadTime": 6.0,
+      "accuracy": 0.6,
+      "projectileSpeed": 90,
+      "splashRadius": 6.0,
+      "splashEdgeFactor": 0.25,
+      "friendlyFire": true,
+      "targets": [
+        "Ground",
+        "Structure"
+      ],
+      "presentation": {
+        "muzzle": "howitzer",
+        "projectile": "arc",
+        "impact": "large"
+      }
+    },
+    {
+      "id": "halcyon_tower_gun",
+      "delivery": "Hitscan",
+      "damage": 18,
+      "damageType": "autocannon",
+      "range": 40,
+      "reloadTime": 1.4,
+      "burstCount": 3,
+      "burstInterval": 0.15,
+      "accuracy": 0.8,
+      "splashRadius": 1.0,
+      "splashEdgeFactor": 0.5,
+      "targets": [
+        "Ground"
+      ],
+      "presentation": {
+        "muzzle": "autocannon",
+        "projectile": "tracer",
+        "impact": "small"
+      }
+    },
+    {
+      "id": "halcyon_tower_atgm",
+      "delivery": "Missile",
+      "damage": 75,
+      "damageType": "armor_piercing",
+      "range": 44,
+      "reloadTime": 5.0,
+      "accuracy": 0.9,
+      "projectileSpeed": 60,
+      "targets": [
+        "Ground"
+      ],
+      "presentation": {
+        "muzzle": "missile",
+        "projectile": "missile",
+        "impact": "medium"
+      }
+    }
+  ]
+}

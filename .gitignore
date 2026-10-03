@@ -44,3 +44,10 @@ secrets/
 .DS_Store
 Thumbs.db
 *.swp
+
+# Node / web
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.vite/
