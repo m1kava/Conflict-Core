@@ -1,0 +1,46 @@
+# .NET build output (all projects write to /artifacts, see Directory.Build.props)
+/artifacts/
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+*.DotSettings.user
+TestResults/
+coverage/
+
+# Unity
+/Client/[Ll]ibrary/
+/Client/[Tt]emp/
+/Client/[Oo]bj/
+/Client/[Bb]uild/
+/Client/[Bb]uilds/
+/Client/[Ll]ogs/
+/Client/[Uu]ser[Ss]ettings/
+/Client/[Mm]emoryCaptures/
+/Client/[Rr]ecordings/
+/Client/*.csproj
+/Client/*.sln
+/Client/*.slnx
+/Client/Assets/AddressableAssetsData/*/*.bin*
+/Client/Assets/StreamingAssets/aa*
+*.apk
+*.aab
+*.unitypackage
+crashlytics-build.properties
+
+# Secrets — never commit (see docs/DEPLOYMENT.md)
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+.env
+.env.*
+!.env.example
+secrets/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
