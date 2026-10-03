@@ -1,0 +1,93 @@
+{
+  "weapons": [
+    {
+      "id": "halcyon_carbine",
+      "delivery": "Hitscan",
+      "damage": 9,
+      "damageType": "small_arms",
+      "range": 30,
+      "reloadTime": 1.2,
+      "burstCount": 3,
+      "burstInterval": 0.15,
+      "accuracy": 0.8,
+      "suppression": 0.1,
+      "targets": [ "Ground", "Structure" ],
+      "presentation": { "muzzleVfx": "vfx/muzzle_rifle", "impactVfx": "vfx/impact_bullet", "fireSound": "sfx/rifle_burst" }
+    },
+    {
+      "id": "halcyon_atgm_launcher",
+      "delivery": "Missile",
+      "damage": 85,
+      "damageType": "armor_piercing",
+      "range": 42,
+      "reloadTime": 4.5,
+      "accuracy": 0.9,
+      "projectileSpeed": 55,
+      "missileTurnRate": 120,
+      "targets": [ "Ground", "Structure" ],
+      "presentation": { "muzzleVfx": "vfx/backblast_small", "projectileVfx": "vfx/missile_trail_small", "impactVfx": "vfx/explosion_at", "fireSound": "sfx/atgm_launch" }
+    },
+    {
+      "id": "halcyon_autocannon_30mm",
+      "delivery": "Hitscan",
+      "damage": 14,
+      "damageType": "autocannon",
+      "range": 38,
+      "reloadTime": 1.5,
+      "burstCount": 4,
+      "burstInterval": 0.12,
+      "accuracy": 0.75,
+      "splashRadius": 1.0,
+      "splashEdgeFactor": 0.5,
+      "suppression": 0.2,
+      "targets": [ "Ground", "Air", "Structure" ],
+      "presentation": { "muzzleVfx": "vfx/muzzle_autocannon", "impactVfx": "vfx/impact_autocannon", "fireSound": "sfx/autocannon_burst" }
+    },
+    {
+      "id": "halcyon_120mm_smoothbore",
+      "delivery": "Projectile",
+      "damage": 70,
+      "damageType": "armor_piercing",
+      "range": 45,
+      "reloadTime": 3.2,
+      "accuracy": 0.85,
+      "projectileSpeed": 160,
+      "splashRadius": 1.5,
+      "splashEdgeFactor": 0.3,
+      "targets": [ "Ground", "Structure" ],
+      "presentation": { "muzzleVfx": "vfx/muzzle_tank_large", "projectileVfx": "vfx/tracer_shell", "impactVfx": "vfx/explosion_shell", "fireSound": "sfx/tank_cannon_120" }
+    },
+    {
+      "id": "halcyon_sam_pod",
+      "delivery": "Missile",
+      "damage": 60,
+      "damageType": "anti_air",
+      "range": 70,
+      "reloadTime": 3.0,
+      "burstCount": 2,
+      "burstInterval": 0.4,
+      "accuracy": 0.95,
+      "projectileSpeed": 120,
+      "missileTurnRate": 240,
+      "targets": [ "Air" ],
+      "presentation": { "muzzleVfx": "vfx/launch_sam", "projectileVfx": "vfx/missile_trail_large", "impactVfx": "vfx/explosion_air", "fireSound": "sfx/sam_launch" }
+    },
+    {
+      "id": "halcyon_155mm_howitzer",
+      "delivery": "Ballistic",
+      "damage": 110,
+      "damageType": "high_explosive",
+      "range": 110,
+      "minRange": 25,
+      "reloadTime": 6.0,
+      "accuracy": 0.6,
+      "projectileSpeed": 90,
+      "splashRadius": 6.0,
+      "splashEdgeFactor": 0.25,
+      "friendlyFire": true,
+      "suppression": 0.6,
+      "targets": [ "Ground", "Structure" ],
+      "presentation": { "muzzleVfx": "vfx/muzzle_howitzer", "projectileVfx": "vfx/shell_arc", "impactVfx": "vfx/explosion_artillery", "fireSound": "sfx/howitzer_fire" }
+    }
+  ]
+}

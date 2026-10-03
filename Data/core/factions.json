@@ -1,0 +1,7 @@
+{
+  "factions": [
+    { "id": "halcyon", "displayNameKey": "faction.halcyon", "playable": true },
+    { "id": "bastion", "displayNameKey": "faction.bastion", "playable": false },
+    { "id": "sable", "displayNameKey": "faction.sable", "playable": false }
+  ]
+}

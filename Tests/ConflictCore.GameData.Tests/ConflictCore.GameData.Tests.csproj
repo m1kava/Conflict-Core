@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\ConflictCore.GameData\ConflictCore.GameData.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Tests run against the real authored data as well as small inline fixtures. -->
+    <None Include="..\..\Data\**\*.json" LinkBase="Data" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

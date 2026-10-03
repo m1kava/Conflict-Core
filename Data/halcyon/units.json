@@ -1,0 +1,371 @@
+{
+  "units": [
+    {
+      "id": "halcyon_engineer",
+      "faction": "halcyon",
+      "class": "Builder",
+      "displayNameKey": "unit.halcyon_engineer.name",
+      "health": 120,
+      "armorType": "infantry",
+      "movement": {
+        "locomotor": "Foot",
+        "speed": 4.2,
+        "acceleration": 12,
+        "turnRate": 360,
+        "radius": 0.6
+      },
+      "weapons": [],
+      "visionRadius": 24,
+      "detectionRadius": 0,
+      "cost": 250,
+      "buildTime": 8,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "abilities": [],
+      "presentation": {
+        "model": "units/halcyon/engineer",
+        "lods": [
+          "units/halcyon/engineer_lod0",
+          "units/halcyon/engineer_lod1",
+          "units/halcyon/engineer_lod2",
+          "units/halcyon/engineer_lod3"
+        ],
+        "animationProfile": "anim/infantry_squad",
+        "portrait": "ui/portraits/halcyon_engineer",
+        "selectSound": "vo/halcyon/engineer_select",
+        "moveSound": "vo/halcyon/engineer_move",
+        "attackSound": "vo/halcyon/engineer_attack",
+        "deathVfx": "vfx/death_infantry"
+      },
+      "network": {
+        "priority": 1
+      }
+    },
+    {
+      "id": "halcyon_rifle_squad",
+      "faction": "halcyon",
+      "class": "Infantry",
+      "displayNameKey": "unit.halcyon_rifle_squad.name",
+      "health": 220,
+      "armorType": "infantry",
+      "movement": {
+        "locomotor": "Foot",
+        "speed": 4.5,
+        "acceleration": 12,
+        "turnRate": 360,
+        "radius": 1.2
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_carbine",
+          "turreted": false
+        }
+      ],
+      "visionRadius": 32,
+      "detectionRadius": 0,
+      "cost": 200,
+      "buildTime": 7,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "abilities": [],
+      "presentation": {
+        "model": "units/halcyon/rifle_squad",
+        "lods": [
+          "units/halcyon/rifle_squad_lod0",
+          "units/halcyon/rifle_squad_lod1",
+          "units/halcyon/rifle_squad_lod2",
+          "units/halcyon/rifle_squad_lod3"
+        ],
+        "animationProfile": "anim/infantry_squad",
+        "portrait": "ui/portraits/halcyon_rifle_squad",
+        "selectSound": "vo/halcyon/rifle_squad_select",
+        "moveSound": "vo/halcyon/rifle_squad_move",
+        "attackSound": "vo/halcyon/rifle_squad_attack",
+        "deathVfx": "vfx/death_infantry"
+      },
+      "network": {
+        "priority": 1
+      }
+    },
+    {
+      "id": "halcyon_at_team",
+      "faction": "halcyon",
+      "class": "Infantry",
+      "displayNameKey": "unit.halcyon_at_team.name",
+      "health": 160,
+      "armorType": "infantry",
+      "movement": {
+        "locomotor": "Foot",
+        "speed": 4.0,
+        "acceleration": 12,
+        "turnRate": 360,
+        "radius": 1.0
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_atgm_launcher",
+          "turreted": false
+        }
+      ],
+      "visionRadius": 34,
+      "detectionRadius": 0,
+      "cost": 350,
+      "buildTime": 9,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "abilities": [],
+      "presentation": {
+        "model": "units/halcyon/at_team",
+        "lods": [
+          "units/halcyon/at_team_lod0",
+          "units/halcyon/at_team_lod1",
+          "units/halcyon/at_team_lod2",
+          "units/halcyon/at_team_lod3"
+        ],
+        "animationProfile": "anim/infantry_squad",
+        "portrait": "ui/portraits/halcyon_at_team",
+        "selectSound": "vo/halcyon/at_team_select",
+        "moveSound": "vo/halcyon/at_team_move",
+        "attackSound": "vo/halcyon/at_team_attack",
+        "deathVfx": "vfx/death_infantry"
+      },
+      "network": {
+        "priority": 1
+      }
+    },
+    {
+      "id": "halcyon_supply_truck",
+      "faction": "halcyon",
+      "class": "Harvester",
+      "displayNameKey": "unit.halcyon_supply_truck.name",
+      "health": 420,
+      "armorType": "light_vehicle",
+      "movement": {
+        "locomotor": "Wheeled",
+        "speed": 8.0,
+        "acceleration": 6,
+        "turnRate": 140,
+        "radius": 2.2
+      },
+      "weapons": [],
+      "visionRadius": 26,
+      "detectionRadius": 0,
+      "cost": 600,
+      "buildTime": 12,
+      "prerequisites": [],
+      "experienceValue": 0.5,
+      "abilities": [],
+      "presentation": {
+        "model": "units/halcyon/supply_truck",
+        "lods": [
+          "units/halcyon/supply_truck_lod0",
+          "units/halcyon/supply_truck_lod1",
+          "units/halcyon/supply_truck_lod2",
+          "units/halcyon/supply_truck_lod3"
+        ],
+        "animationProfile": "anim/vehicle_wheeled",
+        "portrait": "ui/portraits/halcyon_supply_truck",
+        "selectSound": "vo/halcyon/supply_truck_select",
+        "moveSound": "vo/halcyon/supply_truck_move",
+        "attackSound": "vo/halcyon/supply_truck_attack",
+        "deathVfx": "vfx/vehicle_destroyed_medium"
+      },
+      "network": {
+        "priority": 1
+      }
+    },
+    {
+      "id": "halcyon_recon_vehicle",
+      "faction": "halcyon",
+      "class": "LightVehicle",
+      "displayNameKey": "unit.halcyon_recon_vehicle.name",
+      "health": 340,
+      "armorType": "light_vehicle",
+      "movement": {
+        "locomotor": "Wheeled",
+        "speed": 11.0,
+        "acceleration": 9,
+        "turnRate": 180,
+        "radius": 1.8
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_autocannon_30mm",
+          "turreted": true,
+          "turretTurnRate": 180
+        }
+      ],
+      "visionRadius": 48,
+      "detectionRadius": 20,
+      "cost": 550,
+      "buildTime": 10,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "abilities": [],
+      "presentation": {
+        "model": "units/halcyon/recon_vehicle",
+        "lods": [
+          "units/halcyon/recon_vehicle_lod0",
+          "units/halcyon/recon_vehicle_lod1",
+          "units/halcyon/recon_vehicle_lod2",
+          "units/halcyon/recon_vehicle_lod3"
+        ],
+        "animationProfile": "anim/vehicle_wheeled",
+        "portrait": "ui/portraits/halcyon_recon_vehicle",
+        "selectSound": "vo/halcyon/recon_vehicle_select",
+        "moveSound": "vo/halcyon/recon_vehicle_move",
+        "attackSound": "vo/halcyon/recon_vehicle_attack",
+        "deathVfx": "vfx/vehicle_destroyed_medium"
+      },
+      "network": {
+        "priority": 2
+      }
+    },
+    {
+      "id": "halcyon_mbt",
+      "faction": "halcyon",
+      "class": "MainBattleTank",
+      "displayNameKey": "unit.halcyon_mbt.name",
+      "health": 900,
+      "armorType": "heavy_vehicle",
+      "movement": {
+        "locomotor": "Tracked",
+        "speed": 6.5,
+        "acceleration": 4,
+        "turnRate": 75,
+        "radius": 2.6
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_120mm_smoothbore",
+          "turreted": true,
+          "turretTurnRate": 60
+        }
+      ],
+      "visionRadius": 38,
+      "detectionRadius": 0,
+      "cost": 1100,
+      "buildTime": 18,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "abilities": [],
+      "presentation": {
+        "model": "units/halcyon/mbt",
+        "lods": [
+          "units/halcyon/mbt_lod0",
+          "units/halcyon/mbt_lod1",
+          "units/halcyon/mbt_lod2",
+          "units/halcyon/mbt_lod3"
+        ],
+        "animationProfile": "anim/vehicle_tracked",
+        "portrait": "ui/portraits/halcyon_mbt",
+        "selectSound": "vo/halcyon/mbt_select",
+        "moveSound": "vo/halcyon/mbt_move",
+        "attackSound": "vo/halcyon/mbt_attack",
+        "deathVfx": "vfx/vehicle_destroyed_medium"
+      },
+      "network": {
+        "priority": 3
+      }
+    },
+    {
+      "id": "halcyon_aa_vehicle",
+      "faction": "halcyon",
+      "class": "AntiAir",
+      "displayNameKey": "unit.halcyon_aa_vehicle.name",
+      "health": 520,
+      "armorType": "light_vehicle",
+      "movement": {
+        "locomotor": "Tracked",
+        "speed": 7.0,
+        "acceleration": 5,
+        "turnRate": 90,
+        "radius": 2.4
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_sam_pod",
+          "turreted": true,
+          "turretTurnRate": 120
+        },
+        {
+          "weapon": "halcyon_autocannon_30mm",
+          "turreted": true,
+          "turretTurnRate": 120
+        }
+      ],
+      "visionRadius": 52,
+      "detectionRadius": 0,
+      "cost": 900,
+      "buildTime": 15,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "abilities": [],
+      "presentation": {
+        "model": "units/halcyon/aa_vehicle",
+        "lods": [
+          "units/halcyon/aa_vehicle_lod0",
+          "units/halcyon/aa_vehicle_lod1",
+          "units/halcyon/aa_vehicle_lod2",
+          "units/halcyon/aa_vehicle_lod3"
+        ],
+        "animationProfile": "anim/vehicle_tracked",
+        "portrait": "ui/portraits/halcyon_aa_vehicle",
+        "selectSound": "vo/halcyon/aa_vehicle_select",
+        "moveSound": "vo/halcyon/aa_vehicle_move",
+        "attackSound": "vo/halcyon/aa_vehicle_attack",
+        "deathVfx": "vfx/vehicle_destroyed_medium"
+      },
+      "network": {
+        "priority": 2
+      }
+    },
+    {
+      "id": "halcyon_spg",
+      "faction": "halcyon",
+      "class": "Artillery",
+      "displayNameKey": "unit.halcyon_spg.name",
+      "health": 480,
+      "armorType": "light_vehicle",
+      "movement": {
+        "locomotor": "Tracked",
+        "speed": 5.5,
+        "acceleration": 3,
+        "turnRate": 60,
+        "radius": 2.8
+      },
+      "weapons": [
+        {
+          "weapon": "halcyon_155mm_howitzer",
+          "turreted": true,
+          "turretTurnRate": 30
+        }
+      ],
+      "visionRadius": 30,
+      "detectionRadius": 0,
+      "cost": 1300,
+      "buildTime": 22,
+      "prerequisites": [],
+      "experienceValue": 1.0,
+      "abilities": [],
+      "presentation": {
+        "model": "units/halcyon/spg",
+        "lods": [
+          "units/halcyon/spg_lod0",
+          "units/halcyon/spg_lod1",
+          "units/halcyon/spg_lod2",
+          "units/halcyon/spg_lod3"
+        ],
+        "animationProfile": "anim/vehicle_tracked",
+        "portrait": "ui/portraits/halcyon_spg",
+        "selectSound": "vo/halcyon/spg_select",
+        "moveSound": "vo/halcyon/spg_move",
+        "attackSound": "vo/halcyon/spg_attack",
+        "deathVfx": "vfx/vehicle_destroyed_medium"
+      },
+      "network": {
+        "priority": 2
+      }
+    }
+  ]
+}
