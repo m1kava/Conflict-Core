@@ -1,4 +1,4 @@
-import { FOG_CELL_SIZE, NAV_CELL_SIZE, NEUTRAL_OWNER, TICK_RATE } from '../constants';
+import { FOG_CELL_SIZE, NEUTRAL_OWNER, TICK_RATE } from '../constants';
 import { RESOURCE_DEF_ID, secondsToTicks, type GameData } from '../data/gameData';
 import type { BuildingDef, UnitDef, VeterancyLevelDef, WeaponMountDef } from '../data/types';
 import { distance } from '../math/geometry';
@@ -12,6 +12,7 @@ import { createEntity, type Entity, type Order } from './entity';
 import type { NoticeCode, SimEvent } from './events';
 import { moveUnits, processPathRequests } from './movement';
 import { NavGrid } from './navigation';
+import { MAX_BUILD_SLOPE, snapFootprint, SUPPLY_FIELD_CLEARANCE } from './placement';
 import { applyCommand, updateOrders } from './orders';
 import { SpatialGrid } from './spatial';
 import { updateVictory } from './victory';
@@ -55,8 +56,6 @@ export interface WorldOptions {
   seed: number;
 }
 
-/** Clearance kept free around supply fields so trucks can always reach them. */
-const SUPPLY_FIELD_CLEARANCE = 9;
 const SELL_REFUND = 0.5;
 
 /**
@@ -198,6 +197,8 @@ export class World {
     const entity = createEntity(this.nextId++, 'building', defId, owner, this.player(owner)?.team ?? -1, snapped.x, snapped.y);
     entity.buildingDef = def;
     entity.rotated = rotated;
+    // Buildings never turn; the heading only encodes the 90° placement rotation for clients.
+    entity.heading = rotated ? Math.PI / 2 : 0;
     entity.maxHp = def.health;
     entity.hp = complete ? def.health : Math.max(1, def.health * 0.1);
     entity.radius = Math.max(def.width, def.depth) / 2;
@@ -241,21 +242,15 @@ export class World {
 
   /** Snaps a structure centre so its footprint aligns with navigation cells. */
   snapFootprint(def: BuildingDef, x: number, y: number, rotated: boolean): { x: number; y: number } {
-    const w = rotated ? def.depth : def.width;
-    const d = rotated ? def.width : def.depth;
-    const left = Math.round((x - w / 2) / NAV_CELL_SIZE) * NAV_CELL_SIZE;
-    const bottom = Math.round((y - d / 2) / NAV_CELL_SIZE) * NAV_CELL_SIZE;
-    return { x: left + w / 2, y: bottom + d / 2 };
+    const footprint = snapFootprint(def, x, y, rotated);
+    return { x: footprint.x, y: footprint.y };
   }
 
   footprintCells(def: BuildingDef, x: number, y: number, rotated: boolean): number[] | null {
-    const w = (rotated ? def.depth : def.width) / NAV_CELL_SIZE;
-    const d = (rotated ? def.width : def.depth) / NAV_CELL_SIZE;
-    const left = Math.round((x - (w * NAV_CELL_SIZE) / 2) / NAV_CELL_SIZE);
-    const bottom = Math.round((y - (d * NAV_CELL_SIZE) / 2) / NAV_CELL_SIZE);
+    const footprint = snapFootprint(def, x, y, rotated);
     const cells: number[] = [];
-    for (let cy = bottom; cy < bottom + d; cy++) {
-      for (let cx = left; cx < left + w; cx++) {
+    for (let cy = footprint.cellY; cy < footprint.cellY + footprint.cellsDeep; cy++) {
+      for (let cx = footprint.cellX; cx < footprint.cellX + footprint.cellsWide; cx++) {
         if (!this.nav.inBounds(cx, cy)) {
           return null;
         }
@@ -286,7 +281,7 @@ export class World {
       if (this.terrain.isTerrainBlocked(cx, cy) || this.nav.isOccupied(cx, cy)) {
         return 'cannotBuildThere';
       }
-      if (this.terrain.slopeAt(this.nav.cellCenter(cx), this.nav.cellCenter(cy)) > 0.45) {
+      if (this.terrain.slopeAt(this.nav.cellCenter(cx), this.nav.cellCenter(cy)) > MAX_BUILD_SLOPE) {
         return 'cannotBuildThere';
       }
     }
