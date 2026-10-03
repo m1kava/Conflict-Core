@@ -16,3 +16,6 @@ export * from './sim/navigation';
 export * from './sim/targeting';
 export * from './sim/formation';
 export * from './ai/bot';
+export * from './protocol/messages';
+export * from './protocol/snapshot';
+export * from './protocol/visibility';

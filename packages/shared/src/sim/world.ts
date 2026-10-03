@@ -1,5 +1,5 @@
 import { FOG_CELL_SIZE, NAV_CELL_SIZE, NEUTRAL_OWNER, TICK_RATE } from '../constants';
-import { secondsToTicks, type GameData } from '../data/gameData';
+import { RESOURCE_DEF_ID, secondsToTicks, type GameData } from '../data/gameData';
 import type { BuildingDef, UnitDef, VeterancyLevelDef, WeaponMountDef } from '../data/types';
 import { distance } from '../math/geometry';
 import { Rng } from '../math/random';
@@ -216,11 +216,12 @@ export class World {
   }
 
   spawnResource(x: number, y: number, amount: number): Entity {
-    const entity = createEntity(this.nextId++, 'resource', 'supply_field', NEUTRAL_OWNER, -1, x, y);
+    const entity = createEntity(this.nextId++, 'resource', RESOURCE_DEF_ID, NEUTRAL_OWNER, -1, x, y);
     entity.supply = amount;
     entity.radius = 4;
-    entity.hp = 1;
-    entity.maxHp = 1;
+    // Resources cannot be damaged; maxHp records the initial supply so clients can show depletion.
+    entity.hp = amount;
+    entity.maxHp = amount;
     this.entities.set(entity.id, entity);
     return entity;
   }

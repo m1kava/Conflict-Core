@@ -2,7 +2,7 @@
   "name": "conflict-core",
   "version": "0.2.0",
   "private": true,
-  "description": "Conflict Core — online multiplayer real-time strategy game for the browser (desktop and mobile).",
+  "description": "Conflict Core \u2014 online multiplayer real-time strategy game for the browser (desktop and mobile).",
   "license": "UNLICENSED",
   "type": "module",
   "workspaces": [
@@ -18,7 +18,7 @@
     "build": "npm run build -w @conflict/client && npm run build -w @conflict/server",
     "start": "npm run start -w @conflict/server",
     "test": "vitest run",
-    "typecheck": "tsc -b packages/shared packages/server packages/client",
+    "typecheck": "tsc -p packages/shared && tsc -p packages/server && tsc -p packages/client",
     "lint": "eslint packages --max-warnings 0",
     "format": "prettier --write \"packages/**/*.{ts,json,css,html}\"",
     "format:check": "prettier --check \"packages/**/*.{ts,json,css,html}\"",

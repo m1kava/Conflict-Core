@@ -12,6 +12,9 @@ import type {
 } from './types';
 import { validateGameData } from './validate';
 
+/** Definition id of neutral supply fields. */
+export const RESOURCE_DEF_ID = 'supply_field';
+
 /** Immutable, validated registry of all game definitions. */
 export class GameData {
   readonly units = new Map<string, UnitDef>();
@@ -20,7 +23,10 @@ export class GameData {
   readonly factions = new Map<string, FactionDef>();
   readonly veterancy: readonly VeterancyLevelDef[];
   readonly contentHash: string;
+  /** Stable network index of every entity definition (units, buildings, resource) — sorted by id. */
+  readonly entityDefIds: readonly string[];
   private readonly armor = new Map<string, number>();
+  private readonly defIndices = new Map<string, number>();
 
   constructor(combat: CombatDataFile, factionFiles: FactionDataFile[]) {
     const issues = validateGameData(combat, factionFiles);
@@ -37,6 +43,8 @@ export class GameData {
       this.armor.set(`${modifier.damageType}|${modifier.armorType}`, modifier.multiplier);
     }
     this.veterancy = combat.veterancyLevels;
+    this.entityDefIds = [...this.units.keys(), ...this.buildings.keys(), RESOURCE_DEF_ID].sort();
+    this.entityDefIds.forEach((id, index) => this.defIndices.set(id, index));
     this.contentHash = hashString(JSON.stringify([combat, factionFiles]));
   }
 
@@ -62,6 +70,14 @@ export class GameData {
       throw new Error(`Unknown weapon '${id}'.`);
     }
     return def;
+  }
+
+  defIndex(id: string): number {
+    const index = this.defIndices.get(id);
+    if (index === undefined) {
+      throw new Error(`Unknown entity definition '${id}'.`);
+    }
+    return index;
   }
 
   armorModifier(damageType: string, armorType: string): number {
