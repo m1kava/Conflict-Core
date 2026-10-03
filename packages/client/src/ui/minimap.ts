@@ -122,7 +122,7 @@ export class Minimap {
       ctx.stroke();
     }
     this.offline.style.display = hasRadar ? 'none' : 'flex';
-    this.offline.textContent = hasRadar ? '' : 'No radar · enemy contacts hidden';
+    this.offline.textContent = hasRadar ? '' : 'No radar';
   }
 
   private renderBackground(): HTMLCanvasElement {

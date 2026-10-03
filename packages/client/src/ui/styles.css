@@ -857,16 +857,23 @@ select:focus {
 .touch-actions {
   position: fixed;
   right: calc(8px + var(--safe-right));
-  top: 50%;
-  transform: translateY(-50%);
+  top: calc(60px + var(--safe-top));
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
 .touch-actions .icon-btn {
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
+}
+
+@media (max-height: 520px) {
+  .touch-actions {
+    flex-direction: row;
+    top: calc(8px + var(--safe-top));
+    right: calc(96px + var(--safe-right));
+  }
 }
 
 .placement-bar {
@@ -949,9 +956,35 @@ input[type='checkbox'] {
 
 /* ---------------------------------------------------------------- responsive */
 
-@media (max-width: 760px) {
+@media (max-width: 620px) {
   .menu {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-height: 520px) {
+  .screen {
+    align-items: flex-start;
+  }
+
+  .menu {
+    gap: 16px;
+  }
+
+  .brand p {
+    font-size: 12px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .btn {
+    min-height: 36px;
+  }
+
+  .field {
+    margin-bottom: 8px;
   }
 }
 
