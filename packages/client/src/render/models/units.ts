@@ -20,7 +20,7 @@ export interface UnitModel {
 
 const HALF_PI = Math.PI / 2;
 
-function stadium(length: number, height: number, segments = 6): [number, number][] {
+function stadium(length: number, height: number, segments = 4): [number, number][] {
   const r = height / 2;
   const points: [number, number][] = [];
   const half = length / 2 - r;
@@ -43,8 +43,7 @@ function addTracks(b: ModelBuilder, length: number, halfWidth: number, trackWidt
     const spacing = (length - 1.4) / (wheelCount - 1);
     for (let i = 0; i < wheelCount; i++) {
       const x = -length / 2 + 0.7 + i * spacing;
-      b.cylinder(0.34, 0.34, 0.12, { color: PALETTE.slateDark, position: [x, 0.38, z + side * (trackWidth / 2 + 0.02)], rotation: [HALF_PI, 0, 0] }, 14);
-      b.cylinder(0.14, 0.14, 0.14, { color: PALETTE.metal, position: [x, 0.38, z + side * (trackWidth / 2 + 0.05)], rotation: [HALF_PI, 0, 0] }, 8);
+      b.cylinder(0.34, 0.34, 0.12, { color: PALETTE.slateDark, position: [x, 0.38, z + side * (trackWidth / 2 + 0.02)], rotation: [HALF_PI, 0, 0] }, 10);
     }
     b.cylinder(0.3, 0.3, 0.14, { color: PALETTE.metal, position: [length / 2 - 0.45, 0.62, z + side * (trackWidth / 2 + 0.02)], rotation: [HALF_PI, 0, 0] }, 10);
     b.cylinder(0.3, 0.3, 0.14, { color: PALETTE.metal, position: [-length / 2 + 0.45, 0.62, z + side * (trackWidth / 2 + 0.02)], rotation: [HALF_PI, 0, 0] }, 10);
@@ -56,7 +55,7 @@ function addWheels(b: ModelBuilder, positions: number[], halfWidth: number, radi
   for (const x of positions) {
     for (const side of [-1, 1]) {
       const z = side * halfWidth;
-      b.cylinder(radius, radius, thickness, { color: PALETTE.rubber, position: [x, radius, z], rotation: [HALF_PI, 0, 0] }, 16);
+      b.cylinder(radius, radius, thickness, { color: PALETTE.rubber, position: [x, radius, z], rotation: [HALF_PI, 0, 0] }, 12);
       b.cylinder(radius * 0.55, radius * 0.55, thickness + 0.04, { color: PALETTE.slateDark, position: [x, radius, z], rotation: [HALF_PI, 0, 0] }, 10);
     }
   }
@@ -96,9 +95,7 @@ function mainBattleTank(): UnitModel {
   turret.box(0.65, 0.5, 2.7, { color: PALETTE.slateDark, position: [-2.65, 0.45, 0] }, 0.04);
   for (const side of [-1, 1]) {
     turret.cylinder(0.015, 0.015, 1.8, { color: PALETTE.metal, position: [-1.9, 1.8, side * 1.1] }, 4);
-    for (let i = 0; i < 3; i++) {
-      turret.cylinder(0.07, 0.07, 0.3, { color: PALETTE.slateDark, position: [0.9, 0.75 + i * 0.12, side * 1.45], rotation: [side * 0.6, 0, 0] }, 6);
-    }
+    turret.box(0.3, 0.3, 0.16, { color: PALETTE.slateDark, position: [0.9, 0.82, side * 1.45], rotation: [side * 0.6, 0, 0] });
   }
   const turretTeam = new ModelBuilder();
   turretTeam.box(1.6, 0.16, 0.04, { color: PALETTE.white, position: [-0.6, 0.6, -1.53] });
@@ -221,29 +218,29 @@ type SoldierKit = 'rifle' | 'launcher' | 'engineer';
 function soldier(kit: SoldierKit): { body: THREE.BufferGeometry; team: THREE.BufferGeometry } {
   const b = new ModelBuilder();
   for (const side of [-1, 1]) {
-    b.box(0.2, 0.82, 0.19, { color: PALETTE.uniform, position: [0, 0.43, side * 0.11] }, 0.04);
-    b.box(0.28, 0.12, 0.2, { color: PALETTE.rubber, position: [0.04, 0.05, side * 0.11] }, 0.03);
+    b.box(0.2, 0.82, 0.19, { color: PALETTE.uniform, position: [0, 0.43, side * 0.11] });
+    b.box(0.28, 0.12, 0.2, { color: PALETTE.rubber, position: [0.04, 0.05, side * 0.11] });
   }
   b.box(0.32, 0.62, 0.46, { color: PALETTE.uniform, position: [0, 1.15, 0] }, 0.08);
-  b.box(0.36, 0.42, 0.5, { color: kit === 'engineer' ? PALETTE.hiVis : PALETTE.vest, position: [0.01, 1.2, 0] }, 0.07);
-  b.box(0.24, 0.42, 0.36, { color: PALETTE.vest, position: [-0.27, 1.22, 0] }, 0.05);
-  b.sphere(0.12, { color: PALETTE.skin, position: [0.02, 1.6, 0] }, 10, 8);
-  b.add(new THREE.SphereGeometry(0.16, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), { color: kit === 'engineer' ? PALETTE.warning : PALETTE.sandDark, position: [0, 1.64, 0] });
-  b.box(0.5, 0.11, 0.11, { color: PALETTE.uniform, position: [0.2, 1.22, -0.25], rotation: [0, 0.4, -0.2] }, 0.03);
-  b.box(0.5, 0.11, 0.11, { color: PALETTE.uniform, position: [0.2, 1.22, 0.25], rotation: [0, -0.4, -0.2] }, 0.03);
+  b.box(0.36, 0.42, 0.5, { color: kit === 'engineer' ? PALETTE.hiVis : PALETTE.vest, position: [0.01, 1.2, 0] });
+  b.box(0.24, 0.42, 0.36, { color: PALETTE.vest, position: [-0.27, 1.22, 0] });
+  b.sphere(0.12, { color: PALETTE.skin, position: [0.02, 1.6, 0] }, 7, 5);
+  b.add(new THREE.SphereGeometry(0.16, 8, 3, 0, Math.PI * 2, 0, Math.PI / 2), { color: kit === 'engineer' ? PALETTE.warning : PALETTE.sandDark, position: [0, 1.64, 0] });
+  b.box(0.5, 0.11, 0.11, { color: PALETTE.uniform, position: [0.2, 1.22, -0.25], rotation: [0, 0.4, -0.2] });
+  b.box(0.5, 0.11, 0.11, { color: PALETTE.uniform, position: [0.2, 1.22, 0.25], rotation: [0, -0.4, -0.2] });
   if (kit === 'rifle') {
     b.box(0.95, 0.08, 0.06, { color: PALETTE.gunmetal, position: [0.45, 1.25, 0.05] });
     b.box(0.12, 0.18, 0.05, { color: PALETTE.gunmetal, position: [0.3, 1.14, 0.05] });
   } else if (kit === 'launcher') {
-    b.cylinder(0.085, 0.085, 1.35, { color: PALETTE.olive, position: [0.15, 1.5, 0.2], rotation: [0, 0, -HALF_PI] }, 10);
+    b.cylinder(0.085, 0.085, 1.35, { color: PALETTE.olive, position: [0.15, 1.5, 0.2], rotation: [0, 0, -HALF_PI] }, 6);
     b.box(0.22, 0.2, 0.18, { color: PALETTE.slateDark, position: [0.25, 1.62, 0.2] });
   } else {
-    b.box(0.4, 0.28, 0.16, { color: PALETTE.warning, position: [0.25, 0.85, 0.3] }, 0.03);
+    b.box(0.4, 0.28, 0.16, { color: PALETTE.warning, position: [0.25, 0.85, 0.3] });
     b.box(0.08, 0.08, 0.5, { color: PALETTE.metal, position: [0.35, 1.2, 0.0], rotation: [0.3, 0, 0] });
   }
   const team = new ModelBuilder();
   team.box(0.4, 0.1, 0.54, { color: PALETTE.white, position: [0.01, 1.3, 0] });
-  team.add(new THREE.SphereGeometry(0.165, 10, 4, 0, Math.PI * 2, 0, Math.PI / 5), { color: PALETTE.white, position: [0, 1.645, 0] });
+  team.add(new THREE.SphereGeometry(0.165, 8, 2, 0, Math.PI * 2, 0, Math.PI / 5), { color: PALETTE.white, position: [0, 1.645, 0] });
   return { body: b.build(), team: team.build() };
 }
 

@@ -87,7 +87,9 @@ function updateWeapon(world: World, shooter: Entity, weapon: WeaponState, target
   if (weapon.burstRemaining > 0) {
     weapon.burstTimer--;
     if (weapon.burstTimer <= 0) {
-      fire(world, shooter, weapon, target);
+      // Follow-up shots of a hitscan burst are not announced: the first shot's event tells clients to play the
+      // whole burst (count and interval come from weapon data), which keeps event traffic small.
+      fire(world, shooter, weapon, target, weapon.def.delivery !== 'Hitscan');
       weapon.burstRemaining--;
       weapon.burstTimer = world.ticks(weapon.def.burstInterval ?? 0.1);
     }
@@ -102,7 +104,7 @@ function updateWeapon(world: World, shooter: Entity, weapon: WeaponState, target
   }
 }
 
-function fire(world: World, shooter: Entity, weapon: WeaponState, target: Entity): void {
+function fire(world: World, shooter: Entity, weapon: WeaponState, target: Entity, announce = true): void {
   const def = weapon.def;
   const veterancy = shooter.kind === 'unit' ? world.veterancyLevel(shooter) : undefined;
   const accuracy = Math.min(1, def.accuracy * (veterancy?.accuracyMultiplier ?? 1) * (target.moving ? 0.85 : 1));
@@ -124,7 +126,9 @@ function fire(world: World, shooter: Entity, weapon: WeaponState, target: Entity
   }
 
   if (def.delivery === 'Hitscan') {
-    world.events.push({ type: 'fire', shooter: shooter.id, weapon: def.id, x: mx, y: my, tx, ty, target: target.id, flight: 0, hit });
+    if (announce) {
+      world.events.push({ type: 'fire', shooter: shooter.id, weapon: def.id, x: mx, y: my, tx, ty, target: target.id, flight: 0, hit });
+    }
     if (hit) {
       applyHit(world, def, shooter, target, damageMultiplier);
     }

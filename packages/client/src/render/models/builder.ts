@@ -54,7 +54,7 @@ export class ModelBuilder {
   }
 
   box(w: number, h: number, d: number, options: PartOptions, bevel = 0): this {
-    const geometry = bevel > 0 ? new RoundedBoxGeometry(w, h, d, 2, Math.min(bevel, Math.min(w, h, d) / 2 - 0.001)) : new THREE.BoxGeometry(w, h, d);
+    const geometry = bevel > 0 ? new RoundedBoxGeometry(w, h, d, 1, Math.min(bevel, Math.min(w, h, d) / 2 - 0.001)) : new THREE.BoxGeometry(w, h, d);
     return this.add(geometry, options);
   }
 

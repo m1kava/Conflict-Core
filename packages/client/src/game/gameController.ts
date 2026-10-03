@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {
+  decodeEvents,
   type BuildingDef,
   type Command,
   type DecodedSnapshot,
@@ -148,7 +149,7 @@ export class GameController implements InputTarget {
   }
 
   onEvents(tick: number, events: unknown[]): void {
-    this.world.applyEvents(tick, events as SimEvent[]);
+    this.world.applyEvents(tick, decodeEvents(this.world.data, events));
   }
 
   onPrivate(state: PrivateStateView): void {
@@ -297,6 +298,12 @@ export class GameController implements InputTarget {
         const to = this.worldPoint(event.tx, event.ty, target?.kind === 'building' ? 3 : 1);
         effects.weaponFired(weapon, from, to, event.flight / 15, event.hit);
         this.sound.play(weapon.presentation.muzzle, this.distanceToCamera(event.x, event.y));
+        if (weapon.delivery === 'Hitscan' && (weapon.burstCount ?? 1) > 1) {
+          // Repeat the report for the rest of the burst (the sound engine throttles rapid repeats).
+          for (let i = 1; i < (weapon.burstCount ?? 1); i++) {
+            window.setTimeout(() => this.sound.play(weapon.presentation.muzzle, this.distanceToCamera(event.x, event.y)), i * (weapon.burstInterval ?? 0.1) * 1000);
+          }
+        }
         return;
       }
       case 'impact': {
@@ -544,7 +551,7 @@ export class GameController implements InputTarget {
         }
       } else if (ground) {
         const def = entity.buildingDef;
-        let inside = false;
+        let inside: boolean;
         if (def) {
           const rotated = Math.abs(Math.sin(entity.heading)) > 0.5;
           const hw = (rotated ? def.depth : def.width) / 2;

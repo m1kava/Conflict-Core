@@ -1,5 +1,6 @@
 import {
   Bot,
+  encodeEvents,
   eventsForPlayer,
   getGameData,
   getMap,
@@ -126,7 +127,7 @@ export class Match {
       seat.session.sendBinary(seat.encoder.encode(this.world, player.team));
       const visible = eventsForPlayer(this.world, seat.slot, events);
       if (visible.length > 0) {
-        seat.session.send({ t: 'events', tick: this.world.tick, events: visible });
+        seat.session.send({ t: 'events', tick: this.world.tick, events: encodeEvents(this.world.data, visible) });
       }
       if (this.world.tick % PRIVATE_STATE_INTERVAL === 0) {
         this.sendPrivate(seat);

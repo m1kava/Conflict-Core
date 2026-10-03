@@ -1,13 +1,13 @@
 /**
  * Server-side performance benchmark: runs the battle scenario at increasing unit counts and reports
- * simulation tick time and per-player snapshot bandwidth. `npm run benchmark`
+ * simulation tick time and per-player download (binary snapshots + JSON events). `npm run benchmark`
  */
-import { getGameData, getMap, setupBattleScenario, SnapshotEncoder, TICK_RATE, World } from '@conflict/shared';
+import { encodeEvents, eventsForPlayer, getGameData, getMap, setupBattleScenario, SnapshotEncoder, TICK_RATE, World } from '@conflict/shared';
 
 const SIZES = (process.argv[2] ?? '10,50,100,200,300,400').split(',').map(Number);
 const SECONDS = Number(process.argv[3] ?? 60);
 
-console.log(`| Units total | Avg tick (ms) | p99 tick (ms) | Worst tick (ms) | Avg snapshot (KB/s per player) | Peak (KB/s) | Units alive at end |`);
+console.log(`| Units total | Avg tick (ms) | p99 tick (ms) | Worst tick (ms) | Avg download (KB/s per player) | Peak (KB/s) | Units alive at end |`);
 console.log(`|---|---|---|---|---|---|---|`);
 for (const perSide of SIZES.map((n) => Math.round(n / 2))) {
   const world = new World({
@@ -26,9 +26,13 @@ for (const perSide of SIZES.map((n) => Math.round(n / 2))) {
   let bytesThisSecond = 0;
   for (let tick = 0; tick < SECONDS * TICK_RATE && !world.ended; tick++) {
     const start = performance.now();
-    world.step();
+    const events = world.step();
     times.push(performance.now() - start);
     bytesThisSecond += encoder.encode(world, 0).byteLength;
+    const visible = eventsForPlayer(world, 0, events);
+    if (visible.length > 0) {
+      bytesThisSecond += JSON.stringify({ t: 'events', tick: world.tick, events: encodeEvents(world.data, visible) }).length;
+    }
     if (tick % TICK_RATE === TICK_RATE - 1) {
       bytesPerSecond.push(bytesThisSecond);
       bytesThisSecond = 0;

@@ -55,3 +55,26 @@ describe('snapshot delta encoding', () => {
     expect(() => new SnapshotDecoder().decode(bytes.subarray(0, bytes.length - 3))).toThrow();
   });
 });
+
+describe('event codec', () => {
+  it('round-trips every event type compactly', async () => {
+    const { encodeEvents, decodeEvents, getGameData } = await import('../src/index');
+    const data = getGameData();
+    const events = [
+      { type: 'fire', shooter: 12, weapon: 'halcyon_120mm_smoothbore', x: 10.5, y: 20.2, tx: 30.1, ty: 40.9, target: 77, flight: 4, hit: true },
+      { type: 'impact', weapon: 'halcyon_155mm_howitzer', x: 1.2, y: 3.4 },
+      { type: 'death', id: 5, defId: 'halcyon_mbt', owner: 1, x: 99.9, y: 100.1, kind: 'unit' },
+      { type: 'built', id: 6, owner: 0, defId: 'halcyon_barracks' },
+      { type: 'produced', id: 7, owner: 0, defId: 'halcyon_engineer' },
+      { type: 'promoted', id: 8, owner: 0, level: 2 },
+      { type: 'notice', player: 0, code: 'lowPower' },
+      { type: 'notice', player: 1, code: 'underAttack', x: 5, y: 6 },
+      { type: 'defeated', player: 1 },
+      { type: 'gameOver', winnerTeam: 0 },
+    ] as const;
+    const encoded = encodeEvents(data, events as never);
+    expect(decodeEvents(data, JSON.parse(JSON.stringify(encoded)))).toEqual(events);
+    expect(JSON.stringify(encoded[0]).length).toBeLessThan(60);
+    expect(decodeEvents(data, [null, 'x', ['zz'], ['n', 0, 99]])).toEqual([]);
+  });
+});

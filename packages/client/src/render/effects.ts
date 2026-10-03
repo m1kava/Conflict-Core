@@ -73,6 +73,7 @@ export class Effects {
   private readonly decalScale = new THREE.Vector3();
   private readonly decalColor = new THREE.Color();
   private time = 0;
+  private delayed: { at: number; run: () => void }[] = [];
 
   constructor(
     scene: THREE.Scene,
@@ -137,8 +138,23 @@ export class Effects {
     this.smoke.setViewportScale(height, fov);
   }
 
-  /** Muzzle effects and the projectile / tracer visual for one shot. */
+  /**
+   * Muzzle effects and projectile / tracer visuals for one shot. Hitscan bursts arrive as a single event and are
+   * expanded here into `burstCount` shots spaced by `burstInterval`.
+   */
   weaponFired(weapon: WeaponDef, from: THREE.Vector3, to: THREE.Vector3, flightSeconds: number, hit: boolean): void {
+    this.singleShot(weapon, from, to, flightSeconds, hit);
+    if (weapon.delivery === 'Hitscan') {
+      for (let i = 1; i < (weapon.burstCount ?? 1); i++) {
+        const jitter = new THREE.Vector3((Math.random() - 0.5) * 1.5, 0, (Math.random() - 0.5) * 1.5);
+        const shotFrom = from.clone();
+        const shotTo = to.clone().add(jitter);
+        this.delayed.push({ at: this.time + i * (weapon.burstInterval ?? 0.1), run: () => this.singleShot(weapon, shotFrom, shotTo, 0, hit) });
+      }
+    }
+  }
+
+  private singleShot(weapon: WeaponDef, from: THREE.Vector3, to: THREE.Vector3, flightSeconds: number, hit: boolean): void {
     const look = this.temp.subVectors(to, from).normalize();
     const p = weapon.presentation;
     const flashSize = p.muzzle === 'cannon' || p.muzzle === 'howitzer' ? 3.2 : p.muzzle === 'autocannon' ? 1.6 : p.muzzle === 'rifle' ? 0.7 : 1.8;
@@ -297,6 +313,11 @@ export class Effects {
 
   update(dt: number): void {
     this.time += dt;
+    if (this.delayed.length > 0) {
+      const due = this.delayed.filter((d) => d.at <= this.time);
+      this.delayed = this.delayed.filter((d) => d.at > this.time);
+      due.forEach((d) => d.run());
+    }
     this.updateFlights();
     this.updateTracers(dt);
     this.updateDecals(dt);

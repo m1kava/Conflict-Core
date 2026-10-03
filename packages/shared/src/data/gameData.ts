@@ -25,8 +25,11 @@ export class GameData {
   readonly contentHash: string;
   /** Stable network index of every entity definition (units, buildings, resource) — sorted by id. */
   readonly entityDefIds: readonly string[];
+  /** Stable network index of every weapon — sorted by id. */
+  readonly weaponIds: readonly string[];
   private readonly armor = new Map<string, number>();
   private readonly defIndices = new Map<string, number>();
+  private readonly weaponIndices = new Map<string, number>();
 
   constructor(combat: CombatDataFile, factionFiles: FactionDataFile[]) {
     const issues = validateGameData(combat, factionFiles);
@@ -45,6 +48,8 @@ export class GameData {
     this.veterancy = combat.veterancyLevels;
     this.entityDefIds = [...this.units.keys(), ...this.buildings.keys(), RESOURCE_DEF_ID].sort();
     this.entityDefIds.forEach((id, index) => this.defIndices.set(id, index));
+    this.weaponIds = [...this.weapons.keys()].sort();
+    this.weaponIds.forEach((id, index) => this.weaponIndices.set(id, index));
     this.contentHash = hashString(JSON.stringify([combat, factionFiles]));
   }
 
@@ -76,6 +81,14 @@ export class GameData {
     const index = this.defIndices.get(id);
     if (index === undefined) {
       throw new Error(`Unknown entity definition '${id}'.`);
+    }
+    return index;
+  }
+
+  weaponIndex(id: string): number {
+    const index = this.weaponIndices.get(id);
+    if (index === undefined) {
+      throw new Error(`Unknown weapon '${id}'.`);
     }
     return index;
   }
